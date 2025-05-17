@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Admin Profile</h2>
+<p><strong>Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+<p><strong>Email:</strong> {{ user.email }}</p>
+<p><strong>Phone:</strong> {{ user.phone }}</p>
+
+<a href="{% url 'edit_profile' %}" class="btn btn-primary">Edit</a>
+{% endblock %}

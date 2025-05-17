@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <h4 class="text-center fw-bold">Reported Case OverView</h4>
+  <br>
+  <div class="row text-white">
+    {% for stat in stats %}
+    <div class="col-md-3 col-sm-6 mb-4">
+      <div class="card shadow border-0" style="background: linear-gradient(to right, #667eea, #764ba2); border-radius: 1rem;">
+        <a href="{{ stat.link }}" class="text-decoration-none">
+          <div class="card-body text-center text-white">
+            <h6 class="card-title fw-semibold">{{ stat.title }}</h6>
+            <h3 class="fw-bold">{{ stat.value }}</h3>
+          </div>
+        </a>
+      </div>
+    </div>
+    
+    {% endfor %}
+  </div>
+
+  <div class="mt-5 text-center">
+    <h5 class="text-success fw-bold">Crime Trends Over the Last Year</h5>
+    <canvas id="crimeChart" style="max-height: 300px;"></canvas>
+  </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ctx = document.getElementById('crimeChart').getContext('2d');
+  const crimeChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: {{ chart_labels|safe }},
+      datasets: [{
+        label: 'Crimes Reported',
+        data: {{ chart_data|safe }},
+        backgroundColor: 'rgba(72, 207, 173, 0.5)',
+        borderColor: 'teal',
+        borderWidth: 2,
+        pointRadius: 5,
+        fill: true,
+        tension: 0.3
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true,
+          suggestedMax: 10
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}

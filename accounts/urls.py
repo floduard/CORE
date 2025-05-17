@@ -1,0 +1,37 @@
+from django.urls import path
+from . import views
+from django.contrib.auth import views as auth_views
+
+urlpatterns = [
+    path('register/', views.citizen_register, name='register'),
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
+
+    path('dashboard/', views.role_based_dashboard, name='dashboard'),
+   
+
+    # Profiles
+    path('profile/', views.profile_view, name='profile'),
+    path('profile/edit/', views.edit_profile, name='edit_profile'),
+    path('profile/admin/', views.admin_profile, name='admin_profile'),
+    path('profile/officer/', views.officer_profile, name='officer_profile'),
+    path('profile/citizen/', views.citizen_profile, name='citizen_profile'),
+
+    # add Users
+    path('admin/add-user/', views.add_user, name='add_user'),
+
+    # Manage Users
+    path('manage-users/', views.manage_users, name='manage_users'),
+    path('delete-user/<int:user_id>/', views.delete_user, name='delete_user'),
+    path('toggle-user-status/<int:user_id>/', views.toggle_user_status, name='toggle_user_status'),
+
+    # Password change URLs
+    path('password_change/', auth_views.PasswordChangeView.as_view(template_name='accounts/password/password_change.html'), name='password_change'),
+    path('password_change/done/', auth_views.PasswordChangeDoneView.as_view(template_name='accounts/password/password_change_done.html'), name='password_change_done'),
+
+    # Password reset URLs
+    path('password_reset/', auth_views.PasswordResetView.as_view(template_name='accounts/password/password_reset.html'), name='password_reset'),
+    path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(template_name='accounts/password/password_reset_done.html'), name='password_reset_done'),
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='accounts/password/password_reset_confirm.html'), name='password_reset_confirm'),
+    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(template_name='accounts/password/password_reset_complete.html'), name='password_reset_complete'),
+]

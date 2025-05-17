@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1 style="text-align:center; margin-bottom: 30px;">Resource List</h1>
+
+<!-- Filter/Search Form -->
+<form method="get" style="margin-bottom:20px; text-align:center;">
+  <input type="text" name="q" placeholder="Search…" value="{{ query }}" style="padding:6px; border-radius:4px; border:1px solid #ccc; margin-right:8px;">
+  <select name="category" style="padding:6px; border-radius:4px; border:1px solid #ccc; margin-right:8px;">
+      <option value="">All Categories</option>
+      <option value="definition" {% if selected_category == "definition" %}selected{% endif %}>Definition</option>
+      <option value="file" {% if selected_category == "file" %}selected{% endif %}>File</option>
+      <option value="video" {% if selected_category == "video" %}selected{% endif %}>Video</option>
+      <option value="article" {% if selected_category == "article" %}selected{% endif %}>Article</option>
+      <option value="course" {% if selected_category == "course" %}selected{% endif %}>Course</option>
+  </select>
+  <button type="submit" style="padding:6px 16px; border-radius:4px; background:#007bff; color:white; border:none;">Filter</button>
+</form>
+
+<div style="max-width:1100px; margin:0 auto;">
+<table style="width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,0.08);">
+    <thead style="background: #007bff; color: #fff;">
+        <tr>
+            <th style="padding:12px;">Name</th>
+            <th style="padding:12px;">Description</th>
+            <th style="padding:12px;">Category</th>
+            <th style="padding:12px;">Uploaded By</th>
+            <th style="padding:12px;">Date Uploaded</th>
+            <th style="padding:12px;">Action</th>
+            {% if user.is_authenticated and user.role == 'admin' %}
+            <th style="padding:12px;">Admin Actions</th>
+            {% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for resource in page_obj.object_list %}
+        <tr style="border-bottom:1px solid #f0f0f0; {% if forloop.counter0|divisibleby:2 %}background:#f9f9f9;{% endif %}">
+            <td style="padding:10px 12px;">{{ resource.name }}</td>
+            <td style="padding:10px 12px;">{{ resource.description|truncatechars:60 }}</td>
+            <td style="padding:10px 12px; text-transform:capitalize;">{{ resource.category }}</td>
+            <td style="padding:10px 12px;">{{ resource.uploaded_by }}</td>
+            <td style="padding:10px 12px;">{{ resource.date_uploaded|date:"Y-m-d H:i" }}</td>
+            <td style="padding:10px 12px;">
+                {% if resource.category == "file" or resource.category == "video" %}
+                    {% if resource.upload %}
+                        <a href="{{ resource.upload.url }}" download style="background:#28a745; color:white; padding:6px 12px; border-radius:5px; text-decoration:none; font-size:0.95em;">Download</a>
+                    {% else %}
+                        <span style="color:#999;">Download</span>
+                    {% endif %}
+                {% elif resource.link %}
+                    <a href="{{ resource.link }}" target="_blank" style="background:#17a2b8; color:white; padding:6px 12px; border-radius:5px; text-decoration:none; font-size:0.95em;">View</a>
+                {% else %}
+                    <span style="color:#999;">View</span>
+                {% endif %}
+            </td>
+            {% if user.is_authenticated and user.role == 'admin' %}
+                <td style="padding:10px 12px; white-space:nowrap;">
+                    <a href="{% url 'edit_resource' resource.pk %}"
+                    style="background:#ffc107; color:#212529; padding:6px 12px; border-radius:5px; text-decoration:none; font-size:0.95em; margin-right:6px; display:inline-block;">
+                    Update
+                </a>
+                <a href="{% url 'delete_resource' resource.pk %}"
+                style="background:#dc3545; color:white; padding:6px 12px; border-radius:5px; text-decoration:none; font-size:0.95em; display:inline-block;"
+                onclick="return confirm('Are you sure you want to delete this resource?');">
+                Delete
+                </a>
+                </td>
+            {% endif %}
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7" style="padding:20px; text-align:center; color:#999;">No resources found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<!-- Pagination Controls -->
+<div style="margin:20px 0; text-align:center;">
+  <span class="step-links">
+      {% if page_obj.has_previous %}
+          <a href="?{% if query %}q={{ query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}page=1">&laquo; first</a>
+          <a href="?{% if query %}q={{ query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}page={{ page_obj.previous_page_number }}">previous</a>
+      {% endif %}
+
+      <span style="margin:0 10px;">
+          Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+      </span>
+
+      {% if page_obj.has_next %}
+          <a href="?{% if query %}q={{ query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}page={{ page_obj.next_page_number }}">next</a>
+          <a href="?{% if query %}q={{ query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+      {% endif %}
+  </span>
+</div>
+{% endblock %}

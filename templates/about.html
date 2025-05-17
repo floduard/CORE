@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% block content %}
+<!-- animated SVG background shapes -->
+<div class="position-fixed top-0 start-0 w-100 h-100" style="z-index:-1; pointer-events:none;">
+  <svg width="100%" height="100%">
+    <circle cx="80%" cy="10%" r="150" fill="#0d6efd" fill-opacity="0.10"/>
+    <circle cx="15%" cy="85%" r="100" fill="#6f42c1" fill-opacity="0.09"/>
+    <rect x="5%" y="20%" width="200" height="200" rx="45" fill="#ffc107" fill-opacity="0.07" transform="rotate(25)"/>
+  </svg>
+</div>
+
+<!-- Hero Section -->
+<section class="py-5 mb-4" style="background: linear-gradient(105deg, #fff 60%, #e7f1ff 100%);">
+  <div class="container">
+    <div class="row align-items-center gy-4">
+      <div class="col-lg-7">
+        <p class="lead text-secondary mb-4">
+          Welcome!
+          We are a creative and dedicated team, passionate about building open, accessible, and impactful digital solutions. Through this Cybercrimes Reporting and Awareness System, we aim to empower individuals by making crime reporting more user-friendly, secure, and inclusive.
+        </p>
+        <div class="d-flex align-items-center gap-3">
+          <a href="/" class="btn btn-lg btn-primary shadow">
+            <i class="bi bi-house-door-fill me-1"></i> Home
+          </a>
+          <a href="#team" class="btn btn-lg btn-outline-primary shadow">
+            <i class="bi bi-stars me-1"></i> Meet the Team
+          </a>
+        </div>
+      </div>
+      <div class="col-lg-5 text-center">
+        <div class="position-relative d-inline-block">
+          <img src="https://cyber.gov.rw/index.php?eID=dumpFile&t=f&f=439&token=1db6e436290a4d70d92d8f22987420a7c362964d" 
+               class="img-fluid rounded-4 shadow-lg border border-3 border-primary" alt="Team Photo"
+               style="max-height:340px; object-fit:cover;">
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning fs-5 shadow">
+            <i class="bi bi-lightbulb-fill"></i>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- What We Do Section -->
+<section class="py-5">
+  <div class="container">
+    <div class="row g-4 align-items-stretch">
+      <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm text-center px-2 py-4 bg-white bg-opacity-75">
+          <div class="mb-3">
+            <span class="display-4 text-primary"><i class="bi bi-lightning-charge-fill"></i></span>
+          </div>
+          <h4 class="fw-semibold mb-2">Report Incidents</h4>
+    <p class="text-muted mb-0">
+      Securely report cybercrime incidents and suspicious activities. Help us protect our community by enabling rapid response and awareness.
+    </p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm text-center px-2 py-4 bg-white bg-opacity-75">
+          <div class="mb-3">
+            <span class="display-4 text-success"><i class="bi bi-globe-americas"></i></span>
+          </div>
+          <h4 class="fw-semibold mb-2">Connect Citizens & Law Enforcement</h4>
+          <p class="text-muted mb-0">
+            We empower citizens to easily report cybercrime and suspicious activity, directly connecting them with trusted law enforcement agencies for rapid response and support.
+          </p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm text-center px-2 py-4 bg-white bg-opacity-75">
+          <div class="mb-3">
+            <span class="display-4 text-warning"><i class="bi bi-mortarboard"></i></span>
+          </div>
+          <h4 class="fw-semibold mb-2">Educate</h4>
+          <p class="text-muted mb-0">We provide resources, guides, and mentorship to help the next generation of creators grow.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Team Section -->
+<section id="team" class="py-5" style="background: linear-gradient(105deg, #e7f1ff 60%, #fff 100%);">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="fw-bold text-dark mb-2">
+        <i class="bi bi-stars me-2 text-warning"></i>Our Creative Team
+      </h2>
+      <p class="text-muted fs-5">Meet the people behind our mission.</p>
+    </div>
+    <div class="row g-4 justify-content-center">
+      {% for member in team_members %}
+      <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+        <div class="card h-100 border-0 shadow-lg team-card position-relative overflow-hidden">
+          <div class="position-relative">
+            <img src="{{ member.photo_url|default:'https://thumbs.dreamstime.com/b/climbing-helping-team-work-success-concept-concepts-64120507.jpg'|add:forloop.counter }}" 
+                 class="card-img-top team-photo" alt="{{ member.name }}"
+                 style="object-fit:cover; height:240px;">
+            <span class="position-absolute top-0 end-0 m-2 badge rounded-pill bg-primary fs-6 shadow">
+              <i class="bi bi-person-fill"></i>
+            </span>
+          </div>
+          <div class="card-body text-center">
+            <h5 class="card-title fw-bold mb-1">{{ member.name }}</h5>
+            <p class="card-text text-muted mb-2">{{ member.role }}</p>
+            {% if member.social %}
+            <div>
+              {% for platform, link in member.social.items %}
+                <a href="{{ link }}" class="text-decoration-none me-2" target="_blank">
+                  <i class="bi bi-{{ platform|lower }} fs-4" style="color:var(--bs-{{ platform|lower }});"></i>
+                </a>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <!-- Example static cards if no team_members in context -->
+      <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+        <div class="card h-100 border-0 shadow-lg team-card position-relative overflow-hidden">
+          <img src="https://d3njjcbhbojbot.cloudfront.net/api/utilities/v1/imageproxy/https://images.ctfassets.net/wp1lcwdav1p1/2Ufj9BtOH5y2X1zqJGC7DW/42ca8f8ec791bd4363748714dd2a91f7/GettyImages-1885024349.jpg?w=1500&h=680&q=60&fit=fill&f=faces&fm=jpg&fl=progressive&auto=format%2Ccompress&dpr=1&w=1000" class="card-img-top team-photo" alt="Team Member" style="object-fit:cover; height:240px;">
+          <div class="card-body text-center">
+            <h5 class="card-title fw-bold mb-1">Jj</h5>
+            <p class="card-text text-muted mb-2">Project Manager</p>
+            <div>
+              <a href="#" class="text-decoration-none me-2"><i class="bi bi-linkedin fs-4 text-primary"></i></a>
+              <a href="#"><i class="bi bi-github fs-4 text-dark"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+        <div class="card h-100 border-0 shadow-lg team-card position-relative overflow-hidden">
+          <img src="https://withport.com/wp-content/uploads/2024/09/virtual-project-manager-2.webp" class="card-img-top team-photo" alt="Team Member" style="object-fit:cover; height:240px;">
+          <div class="card-body text-center">
+            <h5 class="card-title fw-bold mb-1">frd</h5>
+            <p class="card-text text-muted mb-2">Project Organizer</p>
+            <div>
+              <a href="#" class="text-decoration-none me-2"><i class="bi bi-linkedin fs-4 text-primary"></i></a>
+              <a href="#"><i class="bi bi-github fs-4 text-dark"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+        <div class="card h-100 border-0 shadow-lg team-card position-relative overflow-hidden">
+          <img src="https://bunny-wp-pullzone-3xue3q6yzy.b-cdn.net/wp-content/uploads/2024/11/EM-BLOG-project-manager-responsibilities-1215414034.png" class="card-img-top team-photo" alt="Team Member" style="object-fit:cover; height:240px;">
+          <div class="card-body text-center">
+            <h5 class="card-title fw-bold mb-1">brv</h5>
+            <p class="card-text text-muted mb-2">Developer</p>
+            <div>
+              <a href="#" class="text-decoration-none me-2"><i class="bi bi-twitter-x fs-4 text-info"></i></a>
+              <a href="#"><i class="bi bi-github fs-4 text-dark"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Custom CSS for hover and extras -->
+<style>
+.team-card:hover {
+  transform: translateY(-7px) scale(1.035);
+  box-shadow: 0 1.1rem 2.7rem rgba(13,110,253,.14);
+}
+.team-photo {
+  transition: filter .22s;
+}
+.team-card:hover .team-photo {
+  filter: grayscale(8%) brightness(1.09);
+}
+</style>
+{% endblock %}
