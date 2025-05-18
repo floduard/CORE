@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<style>
+    .card-detail {
+        border-radius: 18px;
+        background: #ffffff;
+        padding: 30px;
+        box-shadow: 0 0 12px rgba(0,0,0,0.08);
+    }
+    .detail-label {
+        font-weight: bold;
+        color: #444;
+    }
+    .detail-value {
+        margin-bottom: 15px;
+        color: #333;
+    }
+    .btn-back {
+        background-color: #007bff;
+        color: white;
+        border-radius: 10px;
+        font-weight: 500;
+        padding: 8px 20px;
+    }
+    .btn-back:hover {
+        background-color: #0056b3;
+    }
+</style>
+
+<div class="container mt-5 mb-5">
+    <div class="card-detail">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="text-primary mb-0">Cybercrime Report Details</h3>
+            {% if user.is_authenticated and user.role == 'admin' or user.role == 'officer' %}
+            <a href="{% url 'all_reports' %}" class="btn btn-back">← Back to List</a>
+            {% else %}
+            <a href="{% url 'my_reports' %}" class="btn btn-back">← Back to List</a>
+            {% endif %}
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <p class="detail-label">Tracking ID:</p>
+                <p class="detail-value">{{ report.tracking_id }}</p>
+            </div>
+            <div class="col-md-6">
+                <p class="detail-label">Cybercrime Type:</p>
+                <p class="detail-value">{{ report.crime_type }}</p>
+            </div>
+
+            <div class="col-md-6">
+                <p class="detail-label">Status:</p>
+                <p class="detail-value">{{ report.status }}</p>
+            </div>
+            {% if user.is_authenticated and user.role == 'admin' or user.role == 'officer' %}
+            <div class="col-md-6">
+                <p class="detail-label">Priority:</p>
+                <p class="detail-value">{{ report.priority }}</p>
+            </div>
+            {% endif %}
+            <div class="col-md-6">
+                <p class="detail-label">Date of Incident:</p>
+                <p class="detail-value">{{ report.date }}</p>
+            </div>
+            <div class="col-md-6">
+                <p class="detail-label">Submitted On:</p>
+                <p class="detail-value">{{ report.created_at|date:"Y-m-d H:i" }}</p>
+            </div>
+
+            <div class="col-md-4">
+                <p class="detail-label">Country:</p>
+                <p class="detail-value">{{ report.country }}</p>
+            </div>
+            <div class="col-md-4">
+                <p class="detail-label">Province / City:</p>
+                <p class="detail-value">{{ report.province_city }}</p>
+            </div>
+            <div class="col-md-4">
+                <p class="detail-label">District:</p>
+                <p class="detail-value">{{ report.district|default:"-" }}</p>
+            </div>
+
+            <div class="col-md-12">
+                <p class="detail-label">Description:</p>
+                <p class="detail-value">{{ report.description }}</p>
+            </div>
+
+            <div class="col-md-12">
+                <p class="detail-label">Suspects:</p>
+                <p class="detail-value">{{ report.suspects|default:"None provided" }}</p>
+            </div>
+
+            <div class="col-md-12">
+                <p class="detail-label">Additional Contacts:</p>
+                <p class="detail-value">{{ report.additional_contacts|default:"not yet provided" }}</p>
+            </div>
+
+            <div class="col-md-12">
+                <p class="detail-label">More Details:</p>
+                <p class="detail-value">{{ report.more_details|default:"not yet requested" }}</p>
+            </div>
+
+            <div class="col-md-12">
+                <p class="detail-label">Recommendations:</p>
+                <p class="detail-value">{{ report.recommendations|default:"not yet provided" }}</p>
+            </div>
+
+            {% if report.evidence %}
+            <div class="col-md-12">
+                <p class="detail-label">Evidence:</p>
+                <p class="detail-value">
+                    <a href="{{ report.evidence.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                        View / Download Evidence
+                    </a>
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

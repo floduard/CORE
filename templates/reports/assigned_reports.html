@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Assigned Reports</h2>
+
+    {% if reports %}
+    <table class="table table-bordered table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>Tracking ID</th>
+                <th>Cybercrime Type</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Reported On</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for report in reports %}
+            <tr>
+                <td>{{ report.tracking_id }}</td>
+                <td>{{ report.cybercrime_type }}</td>
+                <td>{{ report.priority }}</td>
+                <td>{{ report.status }}</td>
+                <td>{{ report.created_at|date:"Y-m-d" }}</td>
+                <td>
+                    <a href="{% url 'report_detail' report.pk %}" class="btn btn-sm btn-primary">Open</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-info">No reports assigned to you.</div>
+    {% endif %}
+</div>
+{% endblock %}

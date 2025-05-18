@@ -5,3 +5,36 @@ class CybercrimeForm(forms.ModelForm):
     class Meta:
         model = CybercrimeType
         fields = ['name', 'description']
+
+class CybercrimeReportForm(forms.ModelForm):
+    class Meta:
+        model = CybercrimeReport
+        fields = [
+            'crime_type', 'description', 'date',
+            'country', 'province_city', 'district',
+            'evidence', 'suspects','additional_contacts'
+        ]
+        widgets = {
+            'crime_type': forms.Select(attrs={'class': 'form-select','placeholder': 'Choose a crime type...'}),
+            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Describe the incident...'}),
+            'country': forms.TextInput(attrs={'class': 'form-control'}),
+            'province_city': forms.TextInput(attrs={'class': 'form-control'}),
+            'district': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Optional'}),
+            'suspects': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Optional names, emails,phone numbers, etc.'}),
+            'evidence': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'additional_contacts': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'optional phone, emails, etc. as means to  contact you...'}),
+        }
+
+    def clean_evidence(self):
+        file = self.cleaned_data.get('evidence')
+        if file:
+            if file.size > 10 * 1024 * 1024:  # 10MB limit
+                raise forms.ValidationError("File too large (max 10MB).")
+            if not file.content_type in ['application/pdf', 'image/jpeg', 'image/png', 'video/mp4']:
+                raise forms.ValidationError("Invalid file type. Only PDF, JPG, PNG, or MP4 allowed.")
+        return file
+    
+    def __init__(self, *args, **kwargs):
+        super(CybercrimeReportForm, self).__init__(*args, **kwargs)
+        self.fields['crime_type'].queryset = CybercrimeType.objects.all()

@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h3 class="mb-4">Incidents I Reported</h3>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    {% if reports %}
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th>Tracking ID</th>
+                    <th>Type</th>
+                    <th>Status</th>                
+                    <th>Assigned To</th>
+                    <th>Submitted On</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                <tr>
+                    <td>{{ report.tracking_id }}</td>
+                    <td>{{ report.crime_type }}</td>
+                    <td>{{ report.status }}</td>
+                
+                    <td>
+                        {% if report.assignee %}
+                            {{ report.assignee }}
+                        {% else %}
+                            Not Assigned
+                        {% endif %}
+                    </td>
+                    <td>{{ report.date|date:"Y-m-d" }}</td>
+                    <td>
+                        <a href="{% url 'report_detail' report.pk %}" class="btn btn-sm btn-info">View</a>
+                        {% if report.status|lower == 'pending' %}
+                            <a href="{% url 'delete_report' report.pk %}" class="btn btn-sm btn-danger"
+                               onclick="return confirm('Are you sure you want to delete this report?');">Delete</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-info">You haven't reported any incidents yet.</div>
+    {% endif %}
+</div>
+{% endblock %}
