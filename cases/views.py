@@ -19,6 +19,8 @@ def is_admin(user):
     return user.is_authenticated and user.role == 'admin'
     
 
+def officer_required(view_func):
+    return user_passes_test(lambda u: u.is_authenticated and u.role == 'officer' or u.role == 'admin')(view_func)
 
 @user_passes_test(is_admin)
 def add_cybercrime(request):
@@ -80,7 +82,7 @@ def submit_cybercrime_report(request):
 
 
 
-@user_passes_test(is_admin)
+@officer_required
 def all_reports_view(request):
     reports = CybercrimeReport.objects.all().order_by('-date')
     return render(request, 'reports/all_reports.html', {'reports': reports})
