@@ -6,6 +6,17 @@ from django.contrib.auth.decorators import login_required
 from .forms import *
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import user_passes_test
+from django.db.models import Count
+from django.utils.timezone import now
+from cases.models import *
+from datetime import timedelta
+from django.utils import timezone
+from django.db.models.functions import ExtractMonth
+from django.urls import reverse
+
+
+def officer_required(view_func):
+    return user_passes_test(lambda u: u.is_authenticated and u.role == 'officer' or u.role == 'admin')(view_func)
 
 def citizen_register(request):
     if request.method == 'POST':
@@ -80,7 +91,7 @@ def add_user(request):
         form = OfficerCreationForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('dashboard')
+            return redirect('manage_users')
     else:
         form = OfficerCreationForm()
     return render(request, 'accounts/admin/add_user.html', {'form': form})
@@ -128,19 +139,120 @@ def logout_view(request):
 @login_required
 def role_based_dashboard(request):
     user = request.user
+
+    if user.role == 'officer' or user.role == 'admin':       # Get all reports
+            reports = CybercrimeReport.objects.all()
+
+            # General Stats
+            total_reports = reports.count()
+            report_link = reverse("all_reports")
+            recent_reports = reports.filter(date__gte=now()-timedelta(days=7)).count()
+            irrelevant_cases = reports.filter(status='irrelevant').count()
+            pending_cases = reports.filter(status='pending').count()
+            under_investigation = reports.filter(status='under_investigation').count()
+            resolved_cases = reports.filter(status='resolved').count()
+            closed_cases = reports.filter(status='closed').count()
+            clitical_cases = reports.filter(priority='critical').count()
+            
+            most_frequent = (
+                               reports.values('crime_type').annotate(count=Count('crime_type')).order_by('-count').first()
+                               )
+            
+            if most_frequent:
+               crime_count = most_frequent['count']
+               crime_name = reports.filter(crime_type=crime_count)              
+               crime_stat_label = f"{crime_name.first()} : {crime_count}"
+               
+            else:
+               crime_stat_label = "N/A"
+            # Most affected zone (province/city)
+            top_zone = reports.values('province_city').annotate(count=Count('province_city')).order_by('-count').first()
+            top_zone_name = top_zone['province_city'] if top_zone else 'N/A'
+
+            # Monthly counts
+            months = ["May", "June", "July", "August", "September", "October",
+                    "November", "December", "January", "February", "March", "April"]
+            monthly_data = (
+            reports.exclude(date__isnull=True)
+            .annotate(month=ExtractMonth('date'))
+            .values('month')
+            .annotate(count=Count('id'))
+        )
+
+                # Create a dictionary mapping month number to count
+            counts_dict = {item['month']: item['count'] for item in monthly_data}
+
+                # Arrange counts in calendar order (May to April)
+            month_order = [5,6,7,8,9,10,11,12,1,2,3,4]
+            counts = [counts_dict.get(month, 0) for month in month_order]
+            
+    
+    else:
+        reports = CybercrimeReport.objects.filter(user=user)
+
+            # General Stats
+        total_reports = reports.count()
+        report_link = reverse("my_reports")
+        recent_reports = reports.filter(date__gte=now()-timedelta(days=7)).count()
+        irrelevant_cases = reports.filter(status='irrelevant').count()
+        pending_cases = reports.filter(status='pending').count()
+        under_investigation = reports.filter(status='under_investigation').count()
+        resolved_cases = reports.filter(status='resolved').count()        
+        closed_cases = reports.filter(status='closed').count()
+        clitical_cases = reports.filter(priority='critical').count()
+        
+        most_frequent = (
+                               reports.values('crime_type').annotate(count=Count('crime_type')).order_by('-count').first()
+                               )
+            
+        if most_frequent:
+               crime_count = most_frequent['count']
+               crime_name = reports.filter(crime_type=crime_count)              
+               crime_stat_label = f"{crime_name.first()} : {crime_count}"
+               
+        else:
+               crime_stat_label = "N/A"
+
+            # Most affected zone (province/city)
+        top_zone = reports.values('province_city').annotate(count=Count('province_city')).order_by('-count').first()
+        top_zone_name = top_zone['province_city'] if top_zone else 'N/A'
+
+            # Monthly counts
+        months = ["May", "June", "July", "August", "September", "October",
+                    "November", "December", "January", "February", "March", "April"]
+        monthly_data = (
+            reports.exclude(date__isnull=True)
+            .annotate(month=ExtractMonth('date'))
+            .values('month')
+            .annotate(count=Count('id'))
+        )
+
+                # Create a dictionary mapping month number to count
+        counts_dict = {item['month']: item['count'] for item in monthly_data}
+
+                # Arrange counts in calendar order (May to April)
+        month_order = [5,6,7,8,9,10,11,12,1,2,3,4]
+        counts = [counts_dict.get(month, 0) for month in month_order]
+
+        
+# Month labels in the same order
+
+    
+    # counts = [reports.filter(date=((i % 12) + 1)).count() for i in range(12)]
+
+    # Define cards
     stats = [
-    {"title": "Total Reported Cases", "value": 0, "link": "/reports/"},
-    {"title": "Most Frequent Case", "value": "Online Harrasment", "link": "/cases/frequent/"},
-    {"title": "High Rated Zone", "value": "Kigali", "link": "/zones/top/"},
-    {"title": "Recent Reported Cases", "value": 0, "link": "/reports/recent/"},
-    {"title": "Irrelevant Cases", "value": 0, "link": "/cases/irrelevant/"},
-    {"title": "Pending Cases", "value": 0, "link": "/cases/pending/"},
-    {"title": "Cases Under Investigation", "value": 0, "link": "/cases/investigating/"},
-    {"title": "Resolved Cases", "value": 0, "link": "/cases/resolved/"},
+        {"title": "Total Reported Cases", "value": total_reports, "link":  report_link },
+        {"title": "Pending Cases", "value": pending_cases, "link": "/cases/pending/"},
+        {"title": "Cases Under Investigation", "value": under_investigation, "link": "/cases/investigating/"},
+        {"title": "Closed", "value": closed_cases, "link": "/cases/closed_cases/"},        
+        {"title": "Recent Reported Cases", "value": recent_reports, "link": "/reports/recent/"},
+        {"title": "Irrelevant Cases", "value": irrelevant_cases, "link": "/cases/irrelevant/"},      
+        {"title": "Resolved Cases", "value": resolved_cases, "link": "/cases/resolved/"},
+        {"title": "Clitical Cases", "value": clitical_cases, "link": "/cases/clitical/"},
+        {"title": "Most Reported Crime","value":  crime_stat_label , "link": "/reports/most/",},
+        {"title": "High Rated Zone", "value": top_zone_name, "link": "/zones/top/"},
     ]
-    months = ["May", "June", "July", "August", "September", "October",
-              "November", "December", "January", "February", "March", "April"]
-    counts = [0] * 12
 
     context = {
         'stats': stats,
@@ -148,14 +260,16 @@ def role_based_dashboard(request):
         'chart_data': counts,
     }
 
+    # Role-based rendering
     if user.role == 'citizen':
         return render(request, 'accounts/dashboards/citizen_dashboard.html', context)
-    elif user.role == 'officer':
+    if user.role == 'officer':
         return render(request, 'accounts/dashboards/officer_dashboard.html', context)
     elif user.role == 'admin':
         return render(request, 'accounts/dashboards/admin_dashboard.html', context)
     else:
-        return redirect('login')  # fallback
+        return redirect('login')
+
 
 def is_admin(user):
     return user.is_authenticated and user.role == 'admin'
@@ -184,3 +298,5 @@ def toggle_user_status(request, user_id):
     status = 'enabled' if user.is_active else 'disabled'
     messages.success(request, f'User {status} successfully.')
     return redirect('manage_users')
+
+

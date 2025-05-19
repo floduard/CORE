@@ -2,24 +2,54 @@
 {% block content %}
 <div class="container mt-4">
     <h2>All Cybercrime Reports</h2>
-    <table class="table table-bordered table-hover mt-3">
+
+    <!-- Search & Filters -->
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-4">
+            <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search by Tracking ID or Reporter">
+        </div>
+        <div class="col-md-3">
+            <select name="status" class="form-select">
+                <option value="">All Statuses</option>
+                {% for s in statuses %}
+                    <option value="{{ s }}" {% if selected_status == s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="crime_type" class="form-select">
+                <option value="">All Crime Types</option>
+                {% for ct in crime_types %}
+                    <option value="{{ ct }}" {% if selected_type == ct %}selected{% endif %}>{{ ct }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Search</button>
+        </div>
+    </form>
+
+    <!-- Table -->
+    <table class="table table-bordered table-hover">
         <thead class="table-light">
             <tr>
                 <th>Tracking ID</th>
                 <th>Type</th>
                 <th>Status</th>
                 <th>Priority</th>
+                <th>Reported by</th>
                 <th>Submitted</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-        {% for report in reports %}
+        {% for report in page_obj %}
             <tr>
                 <td>{{ report.tracking_id }}</td>
-                <td>{{ report.crime_type }}</td>
+                <td>{{ report.crime_type.name }}</td>
                 <td>{{ report.status }}</td>
                 <td>{{ report.priority }}</td>
+                <td>{{ report.user|default:"Unknown" }}</td>
                 <td>{{ report.date|date:"Y-m-d" }}</td>
                 <td>
                     <a href="{% url 'report_detail' report.pk %}" class="btn btn-sm btn-info">Open</a>
@@ -27,8 +57,42 @@
                     <a href="{% url 'report_delete' report.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</a>
                 </td>
             </tr>
+        {% empty %}
+            <tr><td colspan="7" class="text-center">No reports found.</td></tr>
         {% endfor %}
         </tbody>
     </table>
+
+    <!-- Pagination -->
+    <nav>
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if query %}q={{ query }}&{% endif %}{% if selected_status %}status={{ selected_status }}&{% endif %}{% if selected_type %}crime_type={{ selected_type }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if query %}q={{ query }}&{% endif %}{% if selected_status %}status={{ selected_status }}&{% endif %}{% if selected_type %}crime_type={{ selected_type }}&{% endif %}page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if query %}q={{ query }}&{% endif %}{% if selected_status %}status={{ selected_status }}&{% endif %}{% if selected_type %}crime_type={{ selected_type }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+        </ul>
+    </nav>
 </div>
+
 {% endblock %}

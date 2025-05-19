@@ -25,6 +25,14 @@ urlpatterns = [
     # My Assigned Incidents
     path('assigned-reports/', views.assigned_reports, name='assigned_reports'),
     
+    # Report Handling
+    path('reports/<int:pk>/update-status/', views.update_report_status, name='update_report_status'),
+    path('reports/<int:pk>/send-additional-details/', views.send_additional_details, name='send_additional_details'),
+    path('reports/<int:pk>/request-more-info/', views.request_more_info, name='request_more_info'),
+    path('reports/<int:pk>/provide-recommendation/', views.provide_recommendation, name='provide_recommendation'),
+    path('report/<int:pk>/update-status-priority/', views.update_status_priority, name='update_status_priority'),
+
+
 ]
     
 

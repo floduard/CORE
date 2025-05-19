@@ -8,6 +8,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
+from django.core.paginator import Paginator
+from django.db.models import Q
 
 def available_cybercrimes(request):
     cybercrimes = CybercrimeType.objects.all()
@@ -72,7 +74,7 @@ def submit_cybercrime_report(request):
             report.save()
             if request.user.is_authenticated:
               messages.success(request, f"Report submitted successfully! Your Tracking ID is: {report.tracking_id}")
-            return redirect('submit_cybercrime_report')  # Or wherever you want to redirect after submission
+            return redirect('about')  # Or wherever you want to redirect after submission
         else:
             messages.error(request, "Please correct the errors in the form.")
     else:
@@ -84,8 +86,42 @@ def submit_cybercrime_report(request):
 
 @officer_required
 def all_reports_view(request):
-    reports = CybercrimeReport.objects.all().order_by('-date')
-    return render(request, 'reports/all_reports.html', {'reports': reports})
+    query = request.GET.get('q', '')
+    status_filter = request.GET.get('status')
+    crime_type_filter = request.GET.get('crime_type')
+
+    reports = CybercrimeReport.objects.all()
+
+    if query:
+        reports = reports.filter(
+            Q(tracking_id__icontains=query) |
+            Q(user__username__icontains=query)
+        )
+
+    if status_filter:
+        reports = reports.filter(status=status_filter)
+
+    if crime_type_filter:
+        reports = reports.filter(crime_type__name=crime_type_filter)
+
+    paginator = Paginator(reports, 10)  # 10 per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # For filter dropdowns
+    statuses = CybercrimeReport.objects.values_list('status', flat=True).distinct()
+    types = CybercrimeReport.objects.values_list('crime_type__name', flat=True).distinct()
+
+    context = {
+        'page_obj': page_obj,
+        'query': query,
+        'statuses': statuses,
+        'crime_types': types,
+        'selected_status': status_filter,
+        'selected_type': crime_type_filter,
+    }
+    
+    return render(request, 'reports/all_reports.html', context)
 
 @login_required
 def report_detail_view(request, pk):
@@ -130,3 +166,61 @@ def assigned_reports(request):
         reports = CybercrimeReport.objects.filter(assignee=request.user)
         return render(request, 'reports/assigned_reports.html', {'reports': reports})
 
+
+@login_required
+def update_report_status(request, pk):
+    report = get_object_or_404(CybercrimeReport, pk=pk)
+    if request.method == 'POST' and request.user.role in ['admin', 'officer']:
+        new_status = request.POST.get('status')
+        if new_status in ['Pending', 'Under Investigation', 'Resolved','Rejected','Closed', 'Irrelevant']:
+            report.status = new_status
+            report.save()
+    return redirect('report_detail', pk=pk)
+
+
+
+@login_required
+def send_additional_details(request, pk):
+    report = get_object_or_404(CybercrimeReport, pk=pk)
+    if request.method == 'POST' and request.user.role in ['citizen']:
+        report.more_details = request.POST.get('more_details')
+        report.save()
+    return redirect('report_detail', pk=pk)
+
+@login_required
+def request_more_info(request, pk):
+    report = get_object_or_404(CybercrimeReport, pk=pk)
+    if request.method == 'POST' and request.user.role in ['admin', 'officer']:
+        report.request_more_info  = request.POST.get('additional_contacts')
+        report.save()
+    return redirect('report_detail', pk=pk)
+
+@login_required
+def provide_recommendation(request, pk):
+    report = get_object_or_404(CybercrimeReport, pk=pk)
+    if request.method == 'POST' and request.user.role in ['admin', 'officer']:
+        report.recommendations = request.POST.get('recommendations')
+        report.save()
+    return redirect('report_detail', pk=pk)
+
+@login_required
+def update_status_priority(request, pk):
+    report = get_object_or_404(CybercrimeReport, pk=pk)
+
+    if request.user.role not in ['admin', 'officer']:
+        messages.error(request, "You are not authorized to perform this action.")
+        return redirect('report_detail', pk=pk)
+
+    if request.method == 'POST':
+        status = request.POST.get('status')
+        priority = request.POST.get('priority')
+
+        if status and priority:
+            report.status = status
+            report.priority = priority
+            report.save()
+            messages.success(request, "Report status and priority updated.")
+        else:
+            messages.error(request, "Invalid input provided.")
+
+    return redirect('report_detail', pk=pk)

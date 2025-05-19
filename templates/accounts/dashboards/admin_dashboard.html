@@ -7,23 +7,49 @@
   <h4 class="text-center fw-bold">Reported Case OverView</h4>
   <br>
   <div class="row text-white">
-    {% for stat in stats %}
-    <div class="col-md-3 col-sm-6 mb-4">
-      <div class="card shadow border-0" style="background: linear-gradient(to right, #667eea, #764ba2); border-radius: 1rem;">
-        <a href="{{ stat.link }}" class="text-decoration-none">
-          <div class="card-body text-center text-white">
-            <h6 class="card-title fw-semibold">{{ stat.title }}</h6>
-            <h3 class="fw-bold">{{ stat.value }}</h3>
-          </div>
-        </a>
-      </div>
+   {% for stat in stats %}
+  <div class="col-md-3 col-sm-6 mb-4">
+    <div class="card shadow border-0"
+         style="
+           {% if stat.title == 'Total Reported Cases' %}
+             background: linear-gradient(to right, #0cb09a, #94f93d);
+           {% elif stat.title == 'Pending Cases' %}
+             background: linear-gradient(to right, #f7971e, #ffd200);
+           {% elif stat.title == 'Cases Under Investigation' %}
+             background: linear-gradient(to right, #36d1dc, #5b86e5);
+           {% elif stat.title == 'Closed' %}
+             background: linear-gradient(to right, #434343, #000000);
+           {% elif stat.title == 'Recent Reported Cases' %}
+             background: linear-gradient(to right, #e96443, #904e95);
+           {% elif stat.title == 'Irrelevant Cases' %}
+             background: linear-gradient(to right, #ff512f, #dd2476);
+           {% elif stat.title == 'Resolved Cases' %}
+             background: linear-gradient(to right, #00b09b, #96c93d);
+           {% elif stat.title == 'Clitical Cases' %}
+             background: linear-gradient(to right, #ff416c, #ff4b2b);
+           {% elif stat.title == 'Most Reported Crime' %}
+             background: linear-gradient(to right, #56ab2f, #a8e063);
+           {% elif stat.title == 'High Rated Zone' %}
+             background: linear-gradient(to right, #1f4037, #99f2c8);
+           {% else %}
+             background: linear-gradient(to right, #667eea, #764ba2);
+           {% endif %}
+           border-radius: 1rem;">
+      <a href="{{ stat.link }}" class="text-decoration-none">
+        <div class="card-body text-center text-white">
+          <h6 class="card-title fw-semibold">{{ stat.title }}</h6>
+          <h3 class="fw-bold">{{ stat.value }}</h3>
+        </div>
+      </a>
     </div>
-    
-    {% endfor %}
+  </div>
+{% endfor %}
+
+  
   </div>
 
   <div class="mt-5 text-center">
-    <h5 class="text-success fw-bold">Crime Trends Over the Last Year</h5>
+    <h5 class="text-success fw-bold">CyberCrimes Variation Over Months</h5>
     <canvas id="crimeChart" style="max-height: 300px;"></canvas>
   </div>
 </div>

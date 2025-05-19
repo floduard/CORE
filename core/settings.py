@@ -114,6 +114,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+# Optional if using a global static folder
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -137,3 +142,8 @@ DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+login_redirect_url= 'about'
+logout_redirect_url= 'about'
+LOGIN_REDIRECT_URL = login_redirect_url
+LOGOUT_REDIRECT_URL = logout_redirect_url

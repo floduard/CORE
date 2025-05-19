@@ -11,7 +11,8 @@
                 <th>Cybercrime Type</th>
                 <th>Priority</th>
                 <th>Status</th>
-                <th>Reported On</th>
+                <th>Reported By</th>
+                <th>Reported Date</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -19,10 +20,11 @@
             {% for report in reports %}
             <tr>
                 <td>{{ report.tracking_id }}</td>
-                <td>{{ report.cybercrime_type }}</td>
+                <td>{{ report.crime_type }}</td>
                 <td>{{ report.priority }}</td>
                 <td>{{ report.status }}</td>
-                <td>{{ report.created_at|date:"Y-m-d" }}</td>
+                <td>{{ report.user }}</td>
+                <td>{{ report.date|date:"Y-m-d" }}</td>
                 <td>
                     <a href="{% url 'report_detail' report.pk %}" class="btn btn-sm btn-primary">Open</a>
                 </td>
