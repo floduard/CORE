@@ -21,7 +21,6 @@ urlpatterns = [
     path('admin/add-user/', views.add_user, name='add_user'),
     # urls.py
     path('activate/<uid>/<token>/', views.activate_account, name='activate_account'),
-    path('activate/<uid>/<token>/', views.activate_accountr, name='activate_account'),
 
 
     # Manage Users
