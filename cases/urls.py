@@ -24,6 +24,9 @@ urlpatterns = [
 
     # My Assigned Incidents
     path('assigned-reports/', views.assigned_reports, name='assigned_reports'),
+    path('assign_case/<int:pk>/', views.assign_case_to_officer, name='assign_case'),
+    path('case/<int:pk>/assignment-history/', views.case_assignment_history, name='case_assignment_history'),
+
     
     # Report Handling
     path('reports/<int:pk>/update-status/', views.update_report_status, name='update_report_status'),
@@ -31,6 +34,7 @@ urlpatterns = [
     path('reports/<int:pk>/request-more-info/', views.request_more_info, name='request_more_info'),
     path('reports/<int:pk>/provide-recommendation/', views.provide_recommendation, name='provide_recommendation'),
     path('report/<int:pk>/update-status-priority/', views.update_status_priority, name='update_status_priority'),
+    
 
 
 ]

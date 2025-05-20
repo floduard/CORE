@@ -1,0 +1,13 @@
+Hello {{ user.get_full_name|default:user.username }},
+
+You’ve been added to the Cybercrime Reporting System as a {{ user.role }}.
+
+Your temporary password is: {{ temp_password }}
+
+To activate your account and set your own password, please click the link below:
+
+http://{{ domain }}{% url 'activate_account' uid=uid token=token %}
+
+If you didn't expect this email, please ignore it.
+
+Thank you.

@@ -140,8 +140,8 @@ DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
 
 
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/evidence/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'evidence')
 
 login_redirect_url= 'about'
 logout_redirect_url= 'about'

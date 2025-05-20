@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h4 class="mb-4">Your Notifications</h4>
+  <ul class="list-group">
+    {% if notifications %}
+      {% for notif in notifications %}
+        <li class="list-group-item {% if not notif.is_read %}fw-bold{% endif %}">
+          <a href="{{ notif.url }}" class="text-decoration-none text-dark">
+            {{ notif.message }}
+            <small class="d-block text-muted">{{ notif.created_at|date:"Y-m-d H:i" }}</small>
+          </a>
+        </li>
+      {% endfor %}
+    {% else %}
+      <li class="list-group-item">No notifications.</li>
+    {% endif %}
+  </ul>
+</div>
+{% endblock %}

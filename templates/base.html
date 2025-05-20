@@ -129,7 +129,29 @@
                onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/identicon/svg?seed={{ user.username }}';">
           <span>{{ user.username }} : {{ user.role|title }}</span>
         </a>
-      
+                <!-- Notification Icon -->
+        <div class="dropdown ms-4">
+          <a href="#" class="text-white text-decoration-none position-relative" id="notifDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-bell fs-5"></i>
+            <span id="notif-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">
+              0
+            </span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="notifDropdown" id="notif-list" style="min-width: 280px;">
+            <!-- Dynamically loaded by JS (initial fallback) -->
+            <li><span class="dropdown-item">Loading...</span></li>
+            
+            <!-- Divider + View All link -->
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a href="{% url 'all_notifications' %}" class="dropdown-item text-center text-primary">
+                View All Notifications
+              </a>
+            </li>
+          </ul>
+        </div>
+
+
         <div class="dropdown ms-4">
           <a href="#" 
              class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" 
@@ -143,6 +165,11 @@
             <li>
               <a class="dropdown-item" href="{% url 'profile' %}">
                 <i class="bi bi-person-circle me-2"></i> My Profile
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'all_notifications' %}">
+                🔔 Notifications
               </a>
             </li>
             <li>
@@ -163,7 +190,7 @@
       </div>
 
       {% else %}
-        <a href="#" class="btn btn-outline-light btn-sm">You Are In Guest Mode Now </a>
+        <a href="{% url 'about' %}" class="btn btn-outline-light btn-sm">You Are In Guest Mode Now </a>
       {% endif %}
     </div>
   </nav>
@@ -313,6 +340,45 @@
   </div>
 {% endif %}
 
+  <script>
+    function fetchNotifications() {
+      fetch("{% url 'unread_notifications' %}")
+        .then(response => response.json())
+        .then(data => {
+          const notifCount = document.getElementById('notif-count');
+          const notifList = document.getElementById('notif-list');
+
+          // Update badge count
+          if (data.count > 0) {
+            notifCount.innerText = data.count;
+            notifCount.style.display = 'inline-block';
+          } else {
+            notifCount.style.display = 'none';
+          }
+
+          // Update notification dropdown list
+          notifList.innerHTML = '';
+          if (data.notifications.length > 0) {
+            data.notifications.forEach(n => {
+              notifList.innerHTML += `
+                <li class="dropdown-item fw-bold">
+                  <a href="${n.url}" class="text-decoration-none text-dark">
+                    ${n.message.length > 80 ? n.message.slice(0, 77) + '...' : n.message}
+                    <small class="text-muted d-block">${n.created_at}</small>
+                  </a>
+                </li>
+              `;
+            });
+          } else {
+            notifList.innerHTML = '<li><span class="dropdown-item">No notifications.</span></li>';
+          }
+        });
+    }
+
+    // Poll every 30 seconds
+    setInterval(fetchNotifications, 30000);
+    document.addEventListener("DOMContentLoaded", fetchNotifications);
+  </script>
 
   <!-- Footer -->
   <footer class="mt-auto">

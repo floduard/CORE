@@ -30,6 +30,16 @@ class CybercrimeReport(models.Model):
         ('high', 'High'),
         ('critical', 'Critical'),
         ]
+    # REPORT_ENTITY_CHOICES = [
+    #     ('individual', 'Individual'),
+    #     ('company', 'Company'),
+    # ]
+
+    # report_entity = models.CharField(max_length=10, choices=REPORT_ENTITY_CHOICES)
+    # # Optional company fields
+    # company_name = models.CharField(max_length=255, blank=True, null=True)
+    # company_address = models.CharField(max_length=255, blank=True, null=True)
+    # company_email = models.EmailField(blank=True, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE,null=True)
     crime_type = models.ForeignKey(CybercrimeType, on_delete=models.CASCADE)
     description = models.TextField()
@@ -65,3 +75,13 @@ class CybercrimeReport(models.Model):
             import uuid
             self.tracking_id = str(uuid.uuid4()).split('-')[0].upper()
         super().save(*args, **kwargs)
+
+
+class CaseAssignmentHistory(models.Model):
+    case = models.ForeignKey( CybercrimeReport, on_delete=models.CASCADE, related_name='assignment_history')
+    assigned_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='assignments_made')
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='assignments_received')
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.case.tracking_id} → {self.assigned_to} on {self.timestamp:%Y-%m-%d %H:%M}"

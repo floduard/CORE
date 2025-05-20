@@ -38,7 +38,7 @@
             <a href="{% url 'my_reports' %}" class="btn btn-back">← Back to List</a>
             {% endif %}
         </div>
-
+        <hr class="my-4">
         <div class="row">
             <div class="col-md-6">
                 <p class="detail-label">Tracking ID:</p>
@@ -97,8 +97,16 @@
                 <p class="detail-label">Submitted On:</p>
                 <p class="detail-value">{{ report.date|date:"Y-m-d" }}</p>
             </div>
-
-            <div class="col-md-4">
+            <div class="col-md-6">
+              <p class="detail-label">Assigned To:</p>
+              <p class="detail-value">{{ report.assignee }}</p>
+              {% if user.is_authenticated and user.role == 'admin' %}
+              <a href="{% url 'assign_case' report.pk %}" class="btn btn-sm btn-outline-primary">
+                  {% if report.assignee %} Reassign {% else %} Assign Officer {% endif %}
+              </a>
+               {% endif %}
+            </div>
+          <div class="col-md-4">
                 <p class="detail-label">Country:</p>
                 <p class="detail-value">{{ report.country }}</p>
             </div>
@@ -139,8 +147,8 @@
             
             <hr class="my-4">
             <div class="col-md-12">
-                <p class="detail-label">More Details:</p>
-                <p class="detail-value">{{ report.more_details|default:"not yet requested" }}</p>
+                <p class="detail-label">Request More Details:</p>
+                <p class="detail-value">{{ report.request_more_info|default:"not yet requested" }}</p>
                 {% if user.is_authenticated and user.role in 'admin officer' %}
                 
                 <div class="d-flex flex-wrap gap-3">
@@ -164,20 +172,35 @@
             </div>
             <hr class="my-4">
             {% if report.evidence %}
-            <div class="col-md-12">
-                <p class="detail-label">Evidence:</p>
-                <p class="detail-value">
-                    <a href="{{ report.evidence.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
-                        View / Download Evidence
-                    </a>
-                </p>
-            </div>
+              <div class="col-md-12">
+                  <p class="detail-label">Evidence:</p>
+                  <p class="detail-value">
+                      <a href="{{ report.evidence.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                          View / Download Evidence
+                      </a>
+                  </p>
+              </div>
+            {% else %}
+                <div class="col-md-12">
+                  <p class="detail-label">Evidence:</p>
+                  <p class="detail-value">
+                      <a href="#" target="_blank" class="btn btn-sm btn-outline-secondary disabled">
+                         No evidence provided
+                      </a>
+                  </p>
+              </div>
             {% endif %}
+
         </div>
 
 
       
     </div>
+
+    {% if user.is_authenticated and user.role == 'admin' or user.role == 'officer' %}
+    <a href="{% url 'case_assignment_history' report.pk %}" class="btn btn-secondary mt-3">🕘 View Assignment History</a>
+{% endif %}
+
 </div>
 
 <!-- Modals -->
@@ -194,7 +217,8 @@
           <textarea name="more_details" class="form-control" rows="4" placeholder="Enter additional details..." required></textarea>
         </div>
         <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">Send</button>
+          <button type="submit" class="btn btn-primary shadow-sm">
+            <i class="bi bi-send">Send</button>
         </div>
       </div>
     </form>
@@ -214,7 +238,8 @@
           <textarea name="additional_contacts" class="form-control" rows="4" placeholder="What extra information do you need?" required></textarea>
         </div>
         <div class="modal-footer">
-          <button type="submit" class="btn btn-warning">Request</button>
+          <button type="submit" class="btn btn-primary shadow-sm">
+            <i class="bi bi-send">Send Request</button>
         </div>
       </div>
     </form>
@@ -234,20 +259,13 @@
           <textarea name="recommendations" class="form-control" rows="4" placeholder="Enter your recommendation..." required></textarea>
         </div>
         <div class="modal-footer">
-          <button type="submit" class="btn btn-success">Submit</button>
+          <button type="submit" class="btn btn-primary shadow-sm">
+            <i class="bi bi-send">Submit</button>
         </div>
       </div>
     </form>
   </div>
 </div>
-
-{% if messages %}
-<div class="container mt-3">
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-    {% endfor %}
-</div>
-{% endif %}
 
 <!-- Ensure Bootstrap JS is loaded -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

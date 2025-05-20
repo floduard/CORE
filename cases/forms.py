@@ -1,10 +1,27 @@
 from django import forms
 from .models import *
+from datetime import date
 
 class CybercrimeForm(forms.ModelForm):
     class Meta:
         model = CybercrimeType
-        fields = ['name', 'description']
+        fields = ['name', 'description', 'details']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control form-control-sm shadow-sm',
+                'placeholder': 'Enter category name',
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control form-control-sm shadow-sm',
+                'rows': 3,
+                'placeholder': 'Short description',
+            }),
+            'details': forms.Textarea(attrs={
+                'class': 'form-control form-control-sm shadow-sm',
+                'rows': 4,
+                'placeholder': 'Detailed explanation (optional)',
+            }),
+        }
 
 class CybercrimeReportForm(forms.ModelForm):
     class Meta:
@@ -38,3 +55,28 @@ class CybercrimeReportForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(CybercrimeReportForm, self).__init__(*args, **kwargs)
         self.fields['crime_type'].queryset = CybercrimeType.objects.all()
+        
+    def clean_date(self):
+        input_date = self.cleaned_data['date']
+        if input_date > date.today():
+            raise forms.ValidationError("Date cannot be in the future.")
+        return input_date
+
+
+# forms.py
+
+class AssignCaseForm(forms.ModelForm):
+    class Meta:
+        model = CybercrimeReport # or your Report model
+        fields = ['assignee']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['assignee'].queryset = User.objects.filter(role='officer')
+        self.fields['assignee'].label = "Select Officer"
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        case = kwargs.get('instance')
+        if case :
+            self.fields['assignee'].queryset = User.objects.filter(role='officer')
+            self.fields['assignee'].queryset = User.objects.filter(role='officer')

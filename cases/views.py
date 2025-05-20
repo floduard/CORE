@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from .models import *
+from accounts.models import *
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import user_passes_test
 from .forms import *
@@ -10,6 +11,8 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.urls import reverse
+from accounts.utils import notify_user
 
 def available_cybercrimes(request):
     cybercrimes = CybercrimeType.objects.all()
@@ -30,6 +33,14 @@ def add_cybercrime(request):
         form = CybercrimeForm(request.POST)
         if form.is_valid():
             form.save()
+            new_crime = form.save()
+            users = User.objects.all()
+            for user in users:
+                notify_user(
+                    recipient=user,
+                    message=f"A new cybercrime type '{new_crime.name}' has been added.",
+                    url=f"/cybercrimes/{new_crime.pk}/"
+                )
             return redirect('available_cybercrimes')
     else:
         form = CybercrimeForm()
@@ -52,6 +63,13 @@ def delete_cybercrime(request, pk):
     crime = get_object_or_404(CybercrimeType, pk=pk)
     if request.method == 'POST':
         crime.delete()
+        users = User.objects.all()
+        for user in users:
+                notify_user(
+                    recipient=user,
+                    message=f"A new cybercrime type '{crime.name}' has been added.",
+                    url=f"/cybercrimes/{crime.pk}/"
+                )
         return redirect('available_cybercrimes')
     return render(request, 'cases/cybercrime_confirm_delete.html', {'crime': crime})
 
@@ -73,8 +91,15 @@ def submit_cybercrime_report(request):
                 report.user = request.user
             report.save()
             if request.user.is_authenticated:
+                Notification.objects.create(
+                    recipient=request.user,
+                    message="Your cybercrime report was submitted successfully.Your Tracking ID is: {tracking_id} ",
+                    url=reverse('report_detail', args=[report.pk])
+                )
+            if request.user.is_authenticated:
               messages.success(request, f"Report submitted successfully! Your Tracking ID is: {report.tracking_id}")
-            return redirect('about')  # Or wherever you want to redirect after submission
+            return redirect('about') 
+             # Or wherever you want to redirect after submission
         else:
             messages.error(request, "Please correct the errors in the form.")
     else:
@@ -163,7 +188,7 @@ def delete_report(request, pk):
 
 @login_required
 def assigned_reports(request):    
-        reports = CybercrimeReport.objects.filter(assignee=request.user)
+        reports = CybercrimeReport.objects.filter(assignee=request.user)        
         return render(request, 'reports/assigned_reports.html', {'reports': reports})
 
 
@@ -173,10 +198,14 @@ def update_report_status(request, pk):
     if request.method == 'POST' and request.user.role in ['admin', 'officer']:
         new_status = request.POST.get('status')
         if new_status in ['Pending', 'Under Investigation', 'Resolved','Rejected','Closed', 'Irrelevant']:
+            notify_user(
+                    recipient=request.user,
+                    message=f"Your Case Status updated to {new_status}.",
+                    url=f"/reports/{report.pk}/"
+                )
             report.status = new_status
             report.save()
     return redirect('report_detail', pk=pk)
-
 
 
 @login_required
@@ -191,7 +220,7 @@ def send_additional_details(request, pk):
 def request_more_info(request, pk):
     report = get_object_or_404(CybercrimeReport, pk=pk)
     if request.method == 'POST' and request.user.role in ['admin', 'officer']:
-        report.request_more_info  = request.POST.get('additional_contacts')
+        report.request_more_info  = request.POST.get('request_more_info')
         report.save()
     return redirect('report_detail', pk=pk)
 
@@ -224,3 +253,51 @@ def update_status_priority(request, pk):
             messages.error(request, "Invalid input provided.")
 
     return redirect('report_detail', pk=pk)
+
+# views.py
+
+@login_required
+@user_passes_test(lambda u: u.role == 'admin')
+def assign_case_to_officer(request, pk):
+    case = get_object_or_404(CybercrimeReport, pk=pk)
+    if request.method == 'POST':
+        form = AssignCaseForm(request.POST, instance=case)
+        if form.is_valid():
+            reassigned = case.assignee is not None
+            new_officer = form.cleaned_data['assignee']
+            case.assignee = new_officer
+            case.save()
+            if reassigned:
+                messages.success(request, f"New Case Assigned: {case.tracking_id}.")
+                notify_user(
+                    recipient=new_officer,
+                    message=f"New Case Assigned: {case.pk}.",
+                    url=f"/reports/{{case.pk}}/"
+                )
+            else:
+                messages.success(request, f"New Case Assigned: {case.tracking_id}.")
+                notify_user(
+                    recipient=new_officer,
+                    message=f"New Case Assigned: {case.tracking_id}.",
+                    url=f"/reports/{{case.pk}}/"
+                )
+            # Log history
+            CaseAssignmentHistory.objects.create(
+                case=case,
+                assigned_by=request.user,
+                assigned_to=new_officer
+            )
+
+            messages.success(request, "Case assigned successfully.")
+            return redirect('report_detail', pk=case.pk)
+    else:
+        form = AssignCaseForm(instance=case)
+
+    return render(request, 'reports/assign_case.html', {'form': form, 'case': case})
+
+def case_assignment_history(request, pk):
+    case = get_object_or_404(CybercrimeReport, pk=pk)
+    history = CaseAssignmentHistory.objects.filter(case=case).order_by('-timestamp')
+    return render(request, 'reports/assignment_history.html', {'case': case, 'history': history})
+
+

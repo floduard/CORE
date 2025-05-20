@@ -4,3 +4,5 @@ from .models import *
 
 admin.site.register(CybercrimeType)
 admin.site.register(CybercrimeReport)
+admin.site.register(CaseAssignmentHistory)
+ 

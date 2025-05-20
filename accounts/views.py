@@ -9,10 +9,30 @@ from django.contrib.auth.decorators import user_passes_test
 from django.db.models import Count
 from django.utils.timezone import now
 from cases.models import *
+from .models import *
 from datetime import timedelta
 from django.utils import timezone
 from django.db.models.functions import ExtractMonth
 from django.urls import reverse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt 
+from django.http import JsonResponse
+from django.core.mail import send_mail
+from django.conf import settings
+from django.template.loader import render_to_string
+from django.core.mail import send_mail
+from django.contrib.auth.hashers import make_password
+from django.contrib.sites.shortcuts import get_current_site
+from django.template.loader import render_to_string
+from django.utils.encoding import force_bytes
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.crypto import get_random_string
+from django.conf import settings
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes
+from django.core.mail import EmailMessage
+from django.contrib.auth.tokens import default_token_generator
+
 
 
 def officer_required(view_func):
@@ -22,12 +42,28 @@ def citizen_register(request):
     if request.method == 'POST':
         form = CitizenRegisterForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect('dashboard')
+            user = form.save(commit=False)
+            user.is_active = False  # Mark user inactive
+            user.save()
+
+            # Send email verification
+            current_site = get_current_site(request)
+            mail_subject = 'Activate your account'
+            message = render_to_string('accounts/admin/activation_email.html', {
+                'user': user,
+                'domain': current_site.domain,
+                'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+                'token': default_token_generator.make_token(user),
+            })
+            to_email = form.cleaned_data.get('email')
+            email = EmailMessage(mail_subject, message, to=[to_email])
+            email.send()
+
+            return render(request, 'accounts/admin/email_verification_sent.html')
     else:
         form = CitizenRegisterForm()
     return render(request, 'accounts/register.html', {'form': form})
+
 
 @login_required
 def dashboard(request):
@@ -84,17 +120,61 @@ def edit_profile(request):
 
     return render(request, template, {'form': form})
 
+def activate_account(request, uid, token):
+    try:
+        uid = urlsafe_base64_decode(uid).decode()
+        user = User.objects.get(pk=uid)
+    except (User.DoesNotExist, ValueError, TypeError, OverflowError):
+        user = None
+
+    if user and default_token_generator.check_token(user, token):
+        user.is_active = True
+        user.save()
+        messages.success(request, "Account activated. Please log in and change your password.")
+        return redirect('login')
+    else:
+        return HttpResponse("Activation link is invalid!", status=400)
+
+
 @login_required
 @user_passes_test(lambda u: u.role == 'admin')
 def add_user(request):
     if request.method == 'POST':
         form = OfficerCreationForm(request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save(commit=False)
+            temp_password = get_random_string(length=8)
+            user.password = make_password(temp_password)
+            user.is_active = False  # Require email verification
+            user.must_change_password = True  # Custom field for password change
+            user.save()
+
+            # Email verification link setup
+            current_site = get_current_site(request)
+            subject = 'Activate Your Cybercrime Reporting System Account'
+            DEFAULT_FROM_EMAIL='noreply@cybercrime-reporting-system.com'
+            message = render_to_string('accounts/admin/activation_email.html', {
+                'user': user,
+                'domain': current_site.domain,
+                'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+                'token': default_token_generator.make_token(user),
+                'temp_password': temp_password,
+            })
+
+            send_mail(
+                subject,
+                message,
+                DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
+
             return redirect('manage_users')
     else:
         form = OfficerCreationForm()
     return render(request, 'accounts/admin/add_user.html', {'form': form})
+
+
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -135,6 +215,10 @@ def logout_view(request):
     logout(request)
     messages.success(request, 'Logged out successfully.')
     return redirect('login')
+
+
+
+
 
 @login_required
 def role_based_dashboard(request):
@@ -239,13 +323,13 @@ def role_based_dashboard(request):
 
     
     # counts = [reports.filter(date=((i % 12) + 1)).count() for i in range(12)]
-
+    critical_cases = CybercrimeReport.objects.filter(priority="Critical", status__in=["Pending", "Under Investigation"])
     # Define cards
     stats = [
         {"title": "Total Reported Cases", "value": total_reports, "link":  report_link },
         {"title": "Pending Cases", "value": pending_cases, "link": "/cases/pending/"},
         {"title": "Cases Under Investigation", "value": under_investigation, "link": "/cases/investigating/"},
-        {"title": "Closed", "value": closed_cases, "link": "/cases/closed_cases/"},        
+        {"title": "Closed Cases", "value": closed_cases, "link": "/cases/closed_cases/"},        
         {"title": "Recent Reported Cases", "value": recent_reports, "link": "/reports/recent/"},
         {"title": "Irrelevant Cases", "value": irrelevant_cases, "link": "/cases/irrelevant/"},      
         {"title": "Resolved Cases", "value": resolved_cases, "link": "/cases/resolved/"},
@@ -258,6 +342,8 @@ def role_based_dashboard(request):
         'stats': stats,
         'chart_labels': months,
         'chart_data': counts,
+        'critical_cases': critical_cases,
+        'critical_count': critical_cases.count(),
     }
 
     # Role-based rendering
@@ -300,3 +386,52 @@ def toggle_user_status(request, user_id):
     return redirect('manage_users')
 
 
+@login_required
+def all_notifications(request):
+    notifications = Notification.objects.filter(recipient=request.user).order_by('-created_at')
+    return render(request, 'notifications/all_notifications.html', {
+        'notifications': notifications
+    })
+
+def fetch_notifications(request):
+    if request.user.is_authenticated:
+        notifications = Notification.objects.filter(recipient =request.user, is_read=False)[:10]
+        data = [{
+            'id': n.id,
+            'message': n.message,
+            'timestamp': n.created_at.strftime("%Y-%m-%d %H:%M"),
+        } for n in notifications]
+        return JsonResponse({'notifications': data, 'count': notifications.count()})
+    return JsonResponse({'notifications': [], 'count': 0})
+
+
+@require_POST
+def mark_notifications_read(request):
+    if request.user.is_authenticated:
+        Notification.objects.filter(recipient =request.user, is_read=False).update(is_read=True)
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'unauthenticated'}, status=401)
+
+@login_required
+def unread_notifications(request):
+    notifications = Notification.objects.filter(recipient=request.user, is_read=False).order_by('-created_at')
+    return JsonResponse({
+        "count": notifications.count(),
+        "notifications": [
+            {
+                "id": n.id,
+                "message": n.message,
+                "url": n.url,
+                "created_at": n.created_at.strftime('%Y-%m-%d %H:%M'),
+            }
+            for n in notifications
+        ]
+    })
+
+@require_POST
+@login_required
+def mark_as_read(request, pk):
+    notif = get_object_or_404(Notification, pk=pk, user=request.user)
+    notif.is_read = True
+    notif.save()
+    return JsonResponse({"success": True})

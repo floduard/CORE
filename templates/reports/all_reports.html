@@ -53,8 +53,12 @@
                 <td>{{ report.date|date:"Y-m-d" }}</td>
                 <td>
                     <a href="{% url 'report_detail' report.pk %}" class="btn btn-sm btn-info">Open</a>
-                    <a href="{% url 'report_edit' report.pk %}" class="btn btn-sm btn-warning">Update</a>
+                    {% if user.is_authenticated and user.role == 'admin' %}
+                    <a href="{% url 'assign_case' report.pk %}" class="btn btn-sm btn-warning">
+                        {% if report.assignee %} Reassign {% else %} Assign {% endif %}
+                    </a>                     
                     <a href="{% url 'report_delete' report.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</a>
+                    {% endif %} 
                 </td>
             </tr>
         {% empty %}
