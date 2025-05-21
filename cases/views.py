@@ -13,6 +13,8 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.urls import reverse
 from accounts.utils import notify_user
+from django.utils.timezone import now
+from datetime import timedelta
 
 def available_cybercrimes(request):
     cybercrimes = CybercrimeType.objects.all()
@@ -322,4 +324,92 @@ def case_assignment_history(request, pk):
     history = CaseAssignmentHistory.objects.filter(case=case).order_by('-timestamp')
     return render(request, 'reports/assignment_history.html', {'case': case, 'history': history})
 
+def get_reports_by_role(request, queryset):
+    if request.user.role == 'citizen':
+        return queryset.filter(user=request.user)
+    return queryset
 
+@login_required
+def recent_reports(request):
+    last_week = now() - timedelta(days=7)
+    reports = CybercrimeReport.objects.filter(submitted_at__gte=last_week)
+    reports = get_reports_by_role(request, reports)
+    return render(request, 'reports/report_list.html', {'reports': reports, 'title': 'Recent Reports'})
+
+@login_required
+def most_reported_crime(request):
+    from django.db.models import Count
+
+    base_qs = CybercrimeReport.objects
+    if request.user.role == 'citizen':
+        base_qs = base_qs.filter(user=request.user)
+
+    most_common = (base_qs
+                   .values('crime_type')
+                   .annotate(count=Count('crime_type'))
+                   .order_by('-count')
+                   .first())
+
+    if most_common:
+        reports = base_qs.filter(crime_type=most_common['crime_type'])
+    else:
+        reports = CybercrimeReport.objects.none()
+
+    return render(request, 'reports/report_list.html', {'reports': reports, 'title': 'Most Reported Crime'})
+
+@login_required
+def top_zones(request):
+    from django.db.models import Count
+
+    base_qs = CybercrimeReport.objects
+    if request.user.role == 'citizen':
+        base_qs = base_qs.filter(user=request.user)
+
+    top_zone = (base_qs
+                .values('province_city')
+                .annotate(count=Count('province_city'))
+                .order_by('-count')
+                .first())
+
+    if top_zone:
+        reports = base_qs.filter(province_city=top_zone['province_city'])
+    else:
+        reports = CybercrimeReport.objects.none()
+
+    return render(request, 'reports/report_list.html', {'reports': reports, 'title': 'Most Affected Zone'})
+
+@login_required
+def pending_cases(request):
+    reports = CybercrimeReport.objects.filter(status='pending')
+    reports = get_reports_by_role(request, reports)
+    return render(request, 'reports/report_list.html', {'reports': reports, 'title': 'Pending Cases'})
+
+@login_required
+def investigating_cases(request):
+    reports = CybercrimeReport.objects.filter(status='under_investigation')
+    reports = get_reports_by_role(request, reports)
+    return render(request, 'reports/report_list.html', {'reports': reports, 'title': 'Under Investigation'})
+
+@login_required
+def closed_cases(request):
+    reports = CybercrimeReport.objects.filter(status='closed')
+    reports = get_reports_by_role(request, reports)
+    return render(request, 'reports/report_list.html', {'reports': reports, 'title': 'Closed Cases'})
+
+@login_required
+def irrelevant_cases(request):
+    reports = CybercrimeReport.objects.filter(status='irrelevant')
+    reports = get_reports_by_role(request, reports)
+    return render(request, 'reports/report_list.html', {'reports': reports, 'title': 'Irrelevant Cases'})
+
+@login_required
+def resolved_cases(request):
+    reports = CybercrimeReport.objects.filter(status='resolved')
+    reports = get_reports_by_role(request, reports)
+    return render(request, 'reports/report_list.html', {'reports': reports, 'title': 'Resolved Cases'})
+
+@login_required
+def critical_cases(request):
+    reports = CybercrimeReport.objects.filter(priority='critical')
+    reports = get_reports_by_role(request, reports)
+    return render(request, 'reports/report_list.html', {'reports': reports, 'title': 'Critical Cases'})

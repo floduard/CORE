@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h3>{{ title }}</h3>
+    {% if reports %}
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>Tracking ID</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Date</th>
+                    <th>View</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                <tr>
+                    <td>{{ report.tracking_id }}</td>
+                    <td>{{ report.crime_type }}</td>
+                    <td>{{ report.get_status_display }}</td>
+                    <td>{{ report.get_priority_display }}</td>
+                    <td>{{ report.date }}</td>
+                    <td>
+                        <a href="{% url 'report_detail' report.pk %}" class="btn btn-sm btn-primary">Details</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="text-muted">No reports found.</p>
+    {% endif %}
+</div>
+{% endblock %}

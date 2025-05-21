@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import User
+from .models import *
 
 class CitizenRegisterForm(UserCreationForm):
     class Meta:
@@ -13,31 +13,32 @@ class CitizenRegisterForm(UserCreationForm):
         if commit:
             user.save()
         return user
-class AdminProfileForm(forms.ModelForm):
-    class Meta:
-        model = User
-        fields = ['username', 'email', 'first_name', 'last_name']
-
-class OfficerProfileForm(forms.ModelForm):
-    class Meta:
-        model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'phone', 'department']
 
 class CitizenProfileForm(forms.ModelForm):
     class Meta:
-        model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'phone', 'address']
+        model = CitizenProfile
+        fields = ['gender', 'profile_picture', 'id_number', 'birth_date']
+
+class OfficerProfileForm(forms.ModelForm):
+    class Meta:
+        model = OfficerProfile
+        fields = ['badge_id', 'gender', 'profile_picture', 'department']
+
+class AdminProfileForm(forms.ModelForm):
+    class Meta:
+        model = AdminProfile
+        fields = ['profile_picture','gender', 'office_name', 'managed_since']
+
+
 
 class OfficerCreationForm(forms.ModelForm):
-    password = forms.CharField(widget=forms.PasswordInput)
-
+    
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'role', 'department', 'password']
+        fields = ['username', 'email', 'first_name', 'last_name', 'role']
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.set_password(self.cleaned_data['password'])
         if commit:
             user.save()
         return user

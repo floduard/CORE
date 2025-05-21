@@ -52,21 +52,6 @@
     <canvas id="crimeChart" style="max-height: 300px;"></canvas>
   </div>
 </div>
-<div class="card mt-4">
-  <div class="card-header bg-primary text-white">
-    Recent Activities
-  </div>
-  <ul class="list-group list-group-flush">
-    {% for activity in recent_activities %}
-      <li class="list-group-item">
-        <strong>{{ activity.user.username }}</strong>: {{ activity.action }} 
-        <span class="text-muted float-end">{{ activity.timestamp|date:"Y-m-d H:i" }}</span>
-      </li>
-    {% empty %}
-      <li class="list-group-item text-muted">No recent activity found.</li>
-    {% endfor %}
-  </ul>
-</div>
 
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

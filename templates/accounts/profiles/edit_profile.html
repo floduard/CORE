@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow rounded-4">
+        <div class="card-header bg-primary text-white text-center rounded-top-4">
+          <h4 class="mb-0">Edit Your Profile</h4>
+        </div>
+        <div class="card-body p-4">
+          <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Profile Picture -->
+            <div class="mb-4 text-center">
+              {% if profile.profile_picture %}
+                <img src="{{ profile.profile_picture.url }}" alt="Profile Picture" class="rounded-circle shadow mb-2" style="width: 130px; height: 130px; object-fit: cover;">
+              {% else %}
+                <img src="{% static 'default-profile.png' %}" alt="Profile Picture" class="rounded-circle shadow mb-2" style="width: 130px; height: 130px;">
+              {% endif %}
+              <div class="mt-2">
+                {{ form.profile_picture }}
+              </div>
+            </div>
+
+            <!-- User Fields -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Username</label>
+                {{ user_form.username }}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Email</label>
+                {{ user_form.email }}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Phone</label>
+                {{ user_form.phone }}
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Address</label>
+                {{ user_form.address }}
+              </div>
+            </div>
+
+            <hr>
+
+            <!-- Profile Specific Fields -->
+            <h5 class="mb-3">{{ user.role|title }} Profile</h5>
+            <div class="row">
+              {% for field in form %}
+                {% if field.name != "profile_picture" %}
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                      <small class="form-text text-muted">{{ field.help_text }}</small>
+                    {% endif %}
+                  </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+
+            <div class="text-center mt-4">
+              <button type="submit" class="btn btn-primary px-4">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

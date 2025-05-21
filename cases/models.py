@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-
+from django.core.exceptions import ValidationError
 User = get_user_model()
 
 
@@ -30,16 +30,7 @@ class CybercrimeReport(models.Model):
         ('high', 'High'),
         ('critical', 'Critical'),
         ]
-    # REPORT_ENTITY_CHOICES = [
-    #     ('individual', 'Individual'),
-    #     ('company', 'Company'),
-    # ]
-
-    # report_entity = models.CharField(max_length=10, choices=REPORT_ENTITY_CHOICES)
-    # # Optional company fields
-    # company_name = models.CharField(max_length=255, blank=True, null=True)
-    # company_address = models.CharField(max_length=255, blank=True, null=True)
-    # company_email = models.EmailField(blank=True, null=True)
+    
     user = models.ForeignKey(User, on_delete=models.CASCADE,null=True)
     crime_type = models.ForeignKey(CybercrimeType, on_delete=models.CASCADE)
     description = models.TextField()

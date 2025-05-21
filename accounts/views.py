@@ -32,6 +32,14 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes
 from django.core.mail import EmailMessage
 from django.contrib.auth.tokens import default_token_generator
+from cases.views import *
+from django.db.models import Count
+from collections import OrderedDict
+from datetime import datetime
+import csv
+from django.http import HttpResponse
+from reportlab.pdfgen import canvas
+from io import BytesIO
 
 
 
@@ -86,50 +94,56 @@ def dashboard(request):
         })
 
 @login_required
-def profile_view(request):
-    role = request.user.role
-    if role == 'admin':
-        return redirect('admin_profile')
-    elif role == 'officer':
-        return redirect('officer_profile')
-    else:
-        return redirect('citizen_profile')
+def view_profile(request):
+    user = request.user
+    profile = None
+    profile_fields = []
 
+    if user.role == 'admin':
+        profile = getattr(user, 'adminprofile', None)
+    elif user.role == 'officer':
+        profile = getattr(user, 'officerprofile', None)
+    elif user.role == 'citizen':
+        profile = getattr(user, 'citizenprofile', None)
+
+    if profile:
+        profile_fields = [
+            {'label': field.verbose_name, 'value': getattr(profile, field.name)}
+            for field in profile._meta.fields
+            if field.name not in ['id', 'user']  # exclude technical fields
+        ]
+
+    return render(request, 'accounts/profiles/view_profile.html', {
+        'user': user,
+        'profile': profile,
+        'profile_fields': profile_fields,
+    })
 
 @login_required
-def admin_profile(request):
-    return render(request, 'accounts/profiles/admin_profile.html', {'user': request.user})
-
-@login_required
-def officer_profile(request):
-    return render(request, 'accounts/profiles/officer_profile.html', {'user': request.user})
-
-@login_required
-def citizen_profile(request):
-    return render(request, 'accounts/profiles/citizen_profile.html', {'user': request.user})
-
 @login_required
 def edit_profile(request):
     user = request.user
+
     if user.role == 'admin':
+        profile = user.adminprofile
         form_class = AdminProfileForm
-        template = 'accounts/profiles/edit_admin.html'
     elif user.role == 'officer':
+        profile = user.officerprofile
         form_class = OfficerProfileForm
-        template = 'accounts/profiles/edit_officer.html'
     else:
+        profile = user.citizenprofile
         form_class = CitizenProfileForm
-        template = 'accounts/profiles/edit_citizen.html'
 
     if request.method == 'POST':
-        form = form_class(request.POST, instance=user)
+        form = form_class(request.POST, request.FILES, instance=profile)
         if form.is_valid():
             form.save()
-            return redirect('profile')
+            return redirect('profile')  # replace with your profile view name
     else:
-        form = form_class(instance=user)
+        form = form_class(instance=profile)
 
-    return render(request, template, {'form': form})
+    return render(request, 'accounts/profiles/edit_profile.html', {'form': form})
+
 
 def activate_account(request, uid, token):
     try:
@@ -235,137 +249,90 @@ def logout_view(request):
 def role_based_dashboard(request):
     user = request.user
 
-    if user.role == 'officer' or user.role == 'admin':       # Get all reports
-            reports = CybercrimeReport.objects.all()
-
-            # General Stats
-            total_reports = reports.count()
-            report_link = reverse("all_reports")
-            recent_reports = reports.filter(date__gte=now()-timedelta(days=7)).count()
-            irrelevant_cases = reports.filter(status='irrelevant').count()
-            pending_cases = reports.filter(status='pending').count()
-            under_investigation = reports.filter(status='under_investigation').count()
-            resolved_cases = reports.filter(status='resolved').count()
-            closed_cases = reports.filter(status='closed').count()
-            clitical_cases = reports.filter(priority='critical').count()
-            
-            most_frequent = (
-                               reports.values('crime_type').annotate(count=Count('crime_type')).order_by('-count').first()
-                               )
-            
-            if most_frequent:
-               crime_count = most_frequent['count']
-               crime_name = reports.filter(crime_type=crime_count)              
-               crime_stat_label = f"{crime_name.first()} : {crime_count}"
-               
-            else:
-               crime_stat_label = "N/A"
-            # Most affected zone (province/city)
-            top_zone = reports.values('province_city').annotate(count=Count('province_city')).order_by('-count').first()
-            top_zone_name = top_zone['province_city'] if top_zone else 'N/A'
-
-            # Monthly counts
-            months = ["May", "June", "July", "August", "September", "October",
-                    "November", "December", "January", "February", "March", "April"]
-            monthly_data = (
-            reports.exclude(date__isnull=True)
-            .annotate(month=ExtractMonth('date'))
-            .values('month')
-            .annotate(count=Count('id'))
-        )
-
-                # Create a dictionary mapping month number to count
-            counts_dict = {item['month']: item['count'] for item in monthly_data}
-
-                # Arrange counts in calendar order (May to April)
-            month_order = [5,6,7,8,9,10,11,12,1,2,3,4]
-            counts = [counts_dict.get(month, 0) for month in month_order]
-            
-    
+    if user.role in ['officer', 'admin']:
+        reports = CybercrimeReport.objects.all()
     else:
         reports = CybercrimeReport.objects.filter(user=user)
 
-            # General Stats
-        total_reports = reports.count()
-        report_link = reverse("my_reports")
-        recent_reports = reports.filter(date__gte=now()-timedelta(days=7)).count()
-        irrelevant_cases = reports.filter(status='irrelevant').count()
-        pending_cases = reports.filter(status='pending').count()
-        under_investigation = reports.filter(status='under_investigation').count()
-        resolved_cases = reports.filter(status='resolved').count()        
-        closed_cases = reports.filter(status='closed').count()
-        clitical_cases = reports.filter(priority='critical').count()
-        
-        most_frequent = (
-                               reports.values('crime_type').annotate(count=Count('crime_type')).order_by('-count').first()
-                               )
-            
-        if most_frequent:
-               crime_count = most_frequent['count']
-               crime_name = reports.filter(crime_type=crime_count)              
-               crime_stat_label = f"{crime_name.first()} : {crime_count}"
-               
-        else:
-               crime_stat_label = "N/A"
+    total_reports = reports.count()
+    report_link = reverse("all_reports") if user.role in ['admin', 'officer'] else reverse("my_reports")
+    recent_reports = reports.filter(submitted_at__gte=now() - timedelta(days=7)).count()
+    irrelevant_cases = reports.filter(status='irrelevant').count()
+    pending_cases = reports.filter(status='pending').count()
+    under_investigation = reports.filter(status='under_investigation').count()
+    resolved_cases = reports.filter(status='resolved').count()
+    closed_cases = reports.filter(status='closed').count()
+    critical_cases_count = reports.filter(priority='critical').count()
+    most_common = (
+    reports.values('crime_type')
+    .annotate(count=Count('crime_type'))
+    .order_by('-count')
+    .first()
+)
 
-            # Most affected zone (province/city)
-        top_zone = reports.values('province_city').annotate(count=Count('province_city')).order_by('-count').first()
-        top_zone_name = top_zone['province_city'] if top_zone else 'N/A'
+    if most_common:
+            most_reported_crime = reports.filter(crime_type=most_common['crime_type'])
+            crime_stat_label = f"{most_reported_crime.first().crime_type.name} : {most_common['count']}"
+    else:
+            most_reported_crime = None
+            crime_stat_label = "N/A"
+    # Most frequent crime type
+      
 
-            # Monthly counts
-        months = ["May", "June", "July", "August", "September", "October",
-                    "November", "December", "January", "February", "March", "April"]
-        monthly_data = (
-            reports.exclude(date__isnull=True)
-            .annotate(month=ExtractMonth('date'))
-            .values('month')
-            .annotate(count=Count('id'))
-        )
+    # Most affected zone (province/city)
+    top_zone = reports.values('province_city').annotate(count=Count('province_city')).order_by('-count').first()
+    top_zone_name = top_zone['province_city'] if top_zone else 'N/A'
 
-                # Create a dictionary mapping month number to count
-        counts_dict = {item['month']: item['count'] for item in monthly_data}
+    # Monthly trend stats
+    months = ["May", "June", "July", "August", "September", "October",
+              "November", "December", "January", "February", "March", "April"]
+    monthly_data = (
+        reports.exclude(date__isnull=True)
+        .annotate(month=ExtractMonth('date'))
+        .values('month')
+        .annotate(count=Count('id'))
+    )
+    counts_dict = {item['month']: item['count'] for item in monthly_data}
+    month_order = [5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4]
+    counts = [counts_dict.get(month, 0) for month in month_order]
 
-                # Arrange counts in calendar order (May to April)
-        month_order = [5,6,7,8,9,10,11,12,1,2,3,4]
-        counts = [counts_dict.get(month, 0) for month in month_order]
+    # Status and priority chart data
+    status_labels = [label for _, label in CybercrimeReport.STATUS_CHOICES]
+    status_counts = [reports.filter(status=code).count() for code, _ in CybercrimeReport.STATUS_CHOICES]
 
-        
-# Month labels in the same order
+    priority_labels = [label for _, label in CybercrimeReport.PRIORITY_CHOICES]
+    priority_counts = [reports.filter(priority=code).count() for code, _ in CybercrimeReport.PRIORITY_CHOICES]
 
-    
-    # counts = [reports.filter(date=((i % 12) + 1)).count() for i in range(12)]
-    critical_cases = CybercrimeReport.objects.filter(priority="Critical", status__in=["Pending", "Under Investigation"])
-    # Define cards
+
     stats = [
-        {"title": "Total Reported Cases", "value": total_reports, "link":  report_link },
-        {"title": "Pending Cases", "value": pending_cases, "link": "/cases/pending/"},
-        {"title": "Cases Under Investigation", "value": under_investigation, "link": "/cases/investigating/"},
-        {"title": "Closed Cases", "value": closed_cases, "link": "/cases/closed_cases/"},        
-        {"title": "Recent Reported Cases", "value": recent_reports, "link": "/reports/recent/"},
-        {"title": "Irrelevant Cases", "value": irrelevant_cases, "link": "/cases/irrelevant/"},      
-        {"title": "Resolved Cases", "value": resolved_cases, "link": "/cases/resolved/"},
-        {"title": "Clitical Cases", "value": clitical_cases, "link": "/cases/clitical/"},
-        {"title": "Most Reported Crime","value":  crime_stat_label , "link": "/reports/most/",},
-        {"title": "High Rated Zone", "value": top_zone_name, "link": "/zones/top/"},
+        {"title": "Total Reported Cases", "value": total_reports, "link": report_link},
+        {"title": "Pending Cases", "value": pending_cases, "link": reverse("pending_cases")},
+        {"title": "Cases Under Investigation", "value": under_investigation, "link": reverse("investigating_cases")},       
+        {"title": "Cases Resolved", "value": resolved_cases, "link": reverse("resolved_cases")},
+        {"title": "Closed Cases", "value": closed_cases, "link": reverse("closed_cases")},
+        {"title": "Recent Reported Cases", "value": recent_reports, "link": reverse("recent_reports")},
+        {"title": "Irrelevant Cases", "value": irrelevant_cases, "link": reverse("irrelevant_cases")},
+        {"title": "Critical Cases", "value": critical_cases_count, "link": reverse("critical_cases")},
+        {"title": "Most Reported Crime", "value": crime_stat_label, "link":reverse("most_reported_crime")},
+        {"title": "High Rated Zone", "value": top_zone_name, "link": reverse("top_zones")},
     ]
 
     context = {
         'stats': stats,
         'chart_labels': months,
         'chart_data': counts,
-        'critical_cases': critical_cases,
-        'critical_count': critical_cases.count(),
+        'status_labels': status_labels,
+        'status_data': status_counts,
+        'priority_labels': priority_labels,
+        'priority_data': priority_counts,
     }
 
-    # Role-based rendering
-    if user.role == 'citizen':
-        return render(request, 'accounts/dashboards/citizen_dashboard.html', context)
-    if user.role == 'officer':
-        return render(request, 'accounts/dashboards/officer_dashboard.html', context)
-    elif user.role == 'admin':
+    if user.role == 'admin':
         return render(request, 'accounts/dashboards/admin_dashboard.html', context)
+    elif user.role == 'officer':
+        return render(request, 'accounts/dashboards/officer_dashboard.html', context)
     else:
-        return redirect('login')
+        return render(request, 'accounts/dashboards/citizen_dashboard.html', context)
 
 
 def is_admin(user):
@@ -446,3 +413,126 @@ def mark_as_read(request, pk):
     notif.is_read = True
     notif.save()
     return JsonResponse({"success": True})
+
+
+
+@login_required
+def generate_report(request):
+    user = request.user
+    format_type = request.GET.get('format', 'html')  # default to HTML
+    today = now().date()
+    last_month = today - timedelta(days=30)
+
+    if user.role == 'admin':
+        # Prepare stats
+        total_users = User.objects.count()
+        total_citizens = User.objects.filter(role='citizen').count()
+        total_officers = User.objects.filter(role='officer').count()
+        total_reports = CybercrimeReport.objects.count()
+        recent_reports = CybercrimeReport.objects.filter(date__gte=last_month).count()
+        older_period = CybercrimeReport.objects.filter(date__lt=last_month).count()
+        assigned_reports = CybercrimeReport.objects.filter(assignee__isnull=False).count()
+        report_trend = (
+            f"{((recent_reports - older_period) / older_period) * 100:.2f}% {'increase' if recent_reports > older_period else 'decrease'}"
+            if older_period > 0 else "N/A"
+        )
+
+        # CSV Export
+        if format_type == 'csv':
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = 'attachment; filename="admin_report.csv"'
+            writer = csv.writer(response)
+            writer.writerow(['Metric', 'Value'])
+            writer.writerow(['Total Users', total_users])
+            writer.writerow(['Citizens', total_citizens])
+            writer.writerow(['Officers', total_officers])
+            writer.writerow(['Total Reports', total_reports])
+            writer.writerow(['Recent Reports (30 days)', recent_reports])
+            writer.writerow(['Trend', report_trend])
+            writer.writerow(['Assigned Reports', assigned_reports])
+            return response
+
+        # PDF Export
+        if format_type == 'pdf':
+            buffer = BytesIO()
+            p = canvas.Canvas(buffer)
+            p.drawString(100, 800, "Admin Report Summary")
+            y = 780
+            lines = [
+                f"Total Users: {total_users}",
+                f"Citizens: {total_citizens}",
+                f"Officers: {total_officers}",
+                f"Total Reports: {total_reports}",
+                f"Recent Reports (30 days): {recent_reports}",
+                f"Trend: {report_trend}",
+                f"Assigned Reports: {assigned_reports}"
+            ]
+            for line in lines:
+                p.drawString(100, y, line)
+                y -= 20
+            p.showPage()
+            p.save()
+            buffer.seek(0)
+            return HttpResponse(buffer, content_type='application/pdf')
+
+        # HTML fallback
+        context = {
+            'title': f"Report Summary as on {today.strftime('%d %B, %Y')}",
+            'total_users': total_users,
+            'total_citizens': total_citizens,
+            'total_officers': total_officers,
+            'total_reports': total_reports,
+            'recent_reports': recent_reports,
+            'report_trend': report_trend,
+            'assigned_reports': assigned_reports,
+        }
+        return render(request, 'accounts/report_summary.html', context)
+
+    elif user.role == 'officer':
+        assigned_to_me = CybercrimeReport.objects.filter(assignee=user)
+        total_assigned = assigned_to_me.count()
+        closed_cases = assigned_to_me.filter(status='closed').count()
+        recent_activity = assigned_to_me.filter(updated_at__gte=last_month)
+
+        # CSV Export
+        if format_type == 'csv':
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = 'attachment; filename="officer_report.csv"'
+            writer = csv.writer(response)
+            writer.writerow(['Metric', 'Value'])
+            writer.writerow(['Assigned Cases', total_assigned])
+            writer.writerow(['Closed Cases', closed_cases])
+            writer.writerow(['Recent Activity (30 days)', recent_activity.count()])
+            return response
+
+        # PDF Export
+        if format_type == 'pdf':
+            buffer = BytesIO()
+            p = canvas.Canvas(buffer)
+            p.drawString(100, 800, f"{user.get_full_name()}'s Report Summary")
+            y = 780
+            lines = [
+                f"Assigned Cases: {total_assigned}",
+                f"Closed Cases: {closed_cases}",
+                f"Recent Activity (30 days): {recent_activity.count()}"
+            ]
+            for line in lines:
+                p.drawString(100, y, line)
+                y -= 20
+            p.showPage()
+            p.save()
+            buffer.seek(0)
+            return HttpResponse(buffer, content_type='application/pdf')
+
+        # HTML fallback
+        context = {
+            'title': f"Report Summary as on {today.strftime('%d %B, %Y')}",
+            'total_assigned': total_assigned,
+            'closed_cases': closed_cases,
+            'recent_activity_count': recent_activity.count(),
+            'recent_activity': recent_activity,
+        }
+        return render(request, 'accounts/report_summary.html', context)
+
+    else:
+        return render(request, '403.html')

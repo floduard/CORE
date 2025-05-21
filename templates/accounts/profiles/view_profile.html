@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow rounded-4">
+        <div class="card-body text-center p-4">
+
+          <!-- Profile Picture -->
+          <div class="mb-4">
+            {% if profile.profile_picture %}
+              <img src="{{ profile.profile_picture.url }}" class="rounded-circle shadow" style="width: 130px; height: 130px; object-fit: cover;">
+            {% else %}
+              <img src="{% static 'default-profile.png' %}" class="rounded-circle shadow" style="width: 130px; height: 130px;">
+            {% endif %}
+          </div>
+
+          <!-- User Basic Info -->
+          <h4 class="card-title">{{ user.get_full_name|default:user.username }}</h4>
+          <p class="text-muted">{{ user.role|title }}</p>
+
+          <!-- Edit Button -->
+          <div class="mb-3">
+            <a href="{% url 'edit_profile' %}" class="btn btn-outline-primary btn-sm">Edit Profile</a>
+          </div>
+
+          <!-- Tabs -->
+          <ul class="nav nav-tabs justify-content-center mb-3" id="profileTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="account-tab" data-bs-toggle="tab" data-bs-target="#account" type="button" role="tab">Account Info</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="role-tab" data-bs-toggle="tab" data-bs-target="#role" type="button" role="tab">{{ user.role|title }} Info</button>
+            </li>
+          </ul>
+
+          <!-- Tab Contents -->
+          <div class="tab-content" id="profileTabsContent">
+            <!-- Account Info -->
+            <div class="tab-pane fade show active" id="account" role="tabpanel">
+              <div class="row text-start mt-3">
+                <div class="col-md-6"><strong>Email:</strong> {{ user.email }}</div>
+                <div class="col-md-6"><strong>Phone:</strong> {{ user.phone|default:"-" }}</div>
+                <div class="col-md-6"><strong>Address:</strong> {{ user.address|default:"-" }}</div>
+                <div class="col-md-6"><strong>Username:</strong> {{ user.username }}</div>
+              </div>
+            </div>
+
+            <!-- Role Specific Info -->
+            <div class="tab-pane fade" id="role" role="tabpanel">
+              <div class="row text-start mt-3">
+                {% for field in profile_fields %}
+                  {% if not field.name in "id user profile_picture" %}
+                    <div class="col-md-6 mb-2">
+                      <strong>{{ field.verbose_name|capfirst }}:</strong>
+                      {{ field.name|default:"-" }}
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

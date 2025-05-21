@@ -8,14 +8,14 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
 
     path('dashboard/', views.role_based_dashboard, name='dashboard'),
+
+    # summary report
+    path('reports/summary/', views.generate_report, name='report_summary'),
    
 
     # Profiles
-    path('profile/', views.profile_view, name='profile'),
+     path('profile/', views.view_profile, name='profile'),
     path('profile/edit/', views.edit_profile, name='edit_profile'),
-    path('profile/admin/', views.admin_profile, name='admin_profile'),
-    path('profile/officer/', views.officer_profile, name='officer_profile'),
-    path('profile/citizen/', views.citizen_profile, name='citizen_profile'),
 
     # add Users
     path('admin/add-user/', views.add_user, name='add_user'),
@@ -45,6 +45,8 @@ urlpatterns = [
     path('notifications/unread/', views.unread_notifications, name='unread_notifications'),
     path('notifications/read/<int:pk>/', views.mark_as_read, name='mark_notification_read'),
 
+    # statistics redirect
 
+   
 ]
 

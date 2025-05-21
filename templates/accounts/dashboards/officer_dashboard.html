@@ -52,6 +52,27 @@
     <canvas id="crimeChart" style="max-height: 300px;"></canvas>
   </div>
 </div>
+
+<div class="row mt-4">
+  <div class="col-md-6">
+    <div class="card shadow">
+      <div class="card-header">Case Status Distribution</div>
+      <div class="card-body">
+        <canvas id="statusPie" width="250" height="250"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card shadow">
+      <div class="card-header">Case Priority Distribution</div>
+      <div class="card-body">
+        <canvas id="priorityPie" width="250" height="250" ></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="card mt-4">
   <div class="card-header bg-primary text-white">
     Recent Activities
@@ -67,7 +88,6 @@
     {% endfor %}
   </ul>
 </div>
-
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -94,7 +114,49 @@
           suggestedMax: 10
         }
       }
+      
     }
+  });
+
+  // Status Pie Chart
+  const statusCtx = document.getElementById('statusPie').getContext('2d');
+  const statusPie = new Chart(statusCtx, {
+      type: 'pie',
+      data: {
+          labels: {{ status_labels|safe }},
+          datasets: [{
+              label: 'Case Status',
+              data: {{ status_data|safe }},
+              backgroundColor: [
+                  '#FF6384', '#36A2EB', '#FFCE56', '#8BC34A', '#FF9800', '#9C27B0', '#795548'
+              ]
+          }]
+      },
+      options: {
+          responsive: true,
+          maintainAspectRatio: false  // This allows custom size
+      }
+      
+  });
+
+  // Priority Pie Chart
+  const priorityCtx = document.getElementById('priorityPie').getContext('2d');
+  const priorityPie = new Chart(priorityCtx, {
+      type: 'pie',
+      data: {
+          labels: {{ priority_labels|safe }},
+          datasets: [{
+              label: 'Case Priority',
+              data: {{ priority_data|safe }},
+              backgroundColor: [
+                  '#03A9F4', '#4CAF50', '#FFC107', '#F44336'
+              ]
+          }]
+      },
+      options: {
+          responsive: true,
+          maintainAspectRatio: false  // This allows custom size
+      }
   });
 </script>
 {% endblock %}

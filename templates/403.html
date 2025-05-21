@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}403 Forbidden{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <img src="https://www.online-tech-tips.com/wp-content/uploads/2021/06/http-403.jpeg" alt="403 Forbidden" style="max-width:180px; margin-bottom:2rem;">
+    <h1 class="display-4 text-danger mb-2">403 Forbidden</h1>
+    <p class="lead mb-4">
+        Sorry, you don't have permission to access this page.<br>
+        If you believe this is an error, please contact your administrator.
+    </p>
+    <a href="{% url 'dashboard' %}" class="btn btn-primary">Home</a>
+</div>
+{% endblock %}

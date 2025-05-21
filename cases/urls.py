@@ -34,6 +34,20 @@ urlpatterns = [
     path('reports/<int:pk>/request-more-info/', views.request_more_info, name='request_more_info'),
     path('reports/<int:pk>/provide-recommendation/', views.provide_recommendation, name='provide_recommendation'),
     path('report/<int:pk>/update-status-priority/', views.update_status_priority, name='update_status_priority'),
+
+
+    #Links
+
+    path('reports/recent/', views.recent_reports, name='recent_reports'),
+    path('reports/most/', views.most_reported_crime, name='most_reported_crime'),
+    path('zones/top/', views.top_zones, name='top_zones'),
+    path('cases/pending/', views.pending_cases, name='pending_cases'),
+    path('cases/investigating/', views.investigating_cases, name='investigating_cases'),
+    path('cases/closed_cases/', views.closed_cases, name='closed_cases'),
+    path('cases/irrelevant/', views.irrelevant_cases, name='irrelevant_cases'),
+    path('cases/resolved/', views.resolved_cases, name='resolved_cases'),
+    path('cases/critical/', views.critical_cases, name='critical_cases'),
+
     
 
 

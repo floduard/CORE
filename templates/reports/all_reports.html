@@ -38,7 +38,8 @@
                 <th>Status</th>
                 <th>Priority</th>
                 <th>Reported by</th>
-                <th>Submitted</th>
+                <th>Incident Date</th>
+                <th>Submitted At</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -51,6 +52,7 @@
                 <td>{{ report.priority }}</td>
                 <td>{{ report.user|default:"Unknown" }}</td>
                 <td>{{ report.date|date:"Y-m-d" }}</td>
+                <td>{{ report.submitted_at|date:"Y-m-d" }}</td>
                 <td>
                     <a href="{% url 'report_detail' report.pk %}" class="btn btn-sm btn-info">Open</a>
                     {% if user.is_authenticated and user.role == 'admin' %}
