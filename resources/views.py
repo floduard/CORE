@@ -1,11 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Resource
-from .forms import ResourceForm
+from .models import *
+from .forms import *
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from django.core.paginator import Paginator
 from django.db.models import Q
-
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.utils import timezone
 # Custom admin-only decorator
 def admin_required(view_func):
     return user_passes_test(lambda u: u.is_authenticated and u.role == 'admin')(view_func)
@@ -70,3 +71,49 @@ def delete_resource(request, pk):
     resource.delete()
     messages.success(request, 'Resource deleted successfully.')
     return redirect('resource_list')
+
+
+@login_required
+def my_feedbacks(request):
+    feedbacks = Feedback.objects.filter(user=request.user).order_by('-submitted_at')
+    return render(request, 'feedback/my_feedbacks.html', {'feedbacks': feedbacks})
+
+@login_required
+def submit_feedback(request):
+    if request.method == 'POST':
+        form = FeedbackForm(request.POST)
+        if form.is_valid():
+            feedback = form.save(commit=False)
+            feedback.user = request.user
+            feedback.save()
+            return redirect('my_feedbacks')
+    else:
+        form = FeedbackForm()
+    return render(request, 'feedback/submit_feedback.html', {'form': form})
+
+@user_passes_test(lambda u: u.role == 'admin')
+def feedback_list(request):
+    feedbacks = Feedback.objects.all().order_by('-submitted_at')
+    return render(request, 'feedback/feedback_list.html', {'feedbacks': feedbacks})
+
+@user_passes_test(lambda u: u.role == 'admin')
+def reply_feedback(request, pk):
+    feedback = get_object_or_404(Feedback, pk=pk)
+    if request.method == 'POST':
+        form = AdminReplyForm(request.POST, instance=feedback)
+        if form.is_valid():
+            reply = form.save(commit=False)
+            reply.replied_at = timezone.now()
+            reply.save()
+            # Optionally: Notify user here
+            return redirect('feedback_list')
+    else:
+        form = AdminReplyForm(instance=feedback)
+    return render(request, 'feedback/reply_feedback.html', {'form': form, 'feedback': feedback})
+
+@user_passes_test(lambda u: u.role == 'admin')
+def delete_feedback(request, pk):
+    feedback = get_object_or_404(Feedback, pk=pk)
+    feedback.delete()
+    return redirect('feedback_list')
+

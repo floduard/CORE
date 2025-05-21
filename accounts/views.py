@@ -68,11 +68,22 @@ def citizen_register(request):
 @login_required
 def dashboard(request):
     if request.user.role == 'admin':
-        return render(request, 'accounts/dashboards/admin_dashboard.html')
+        recent_activities = ActivityLog.objects.all()[:10]
+        return render(request, 'accounts/dashboards/admin_dashboard.html', {
+            'recent_activities': recent_activities
+        })
+
     elif request.user.role == 'officer':
-        return render(request, 'accounts/dashboards/officer_dashboard.html')
+        recent_activities = ActivityLog.objects.filter(user=request.user)[:10]
+        return render(request, 'accounts/dashboards/officer_dashboard.html', {
+            'recent_activities': recent_activities
+        })
+
     elif request.user.role == 'citizen':
-        return render(request, 'accounts/dashboards/citizen_dashboard.html')
+        recent_activities = ActivityLog.objects.filter(user=request.user)[:10]
+        return render(request, 'accounts/dashboards/citizen_dashboard.html', {
+            'recent_activities': recent_activities
+        })
 
 @login_required
 def profile_view(request):

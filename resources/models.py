@@ -24,3 +24,14 @@ class Resource(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Feedback(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='feedbacks')
+    message = models.TextField()
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    admin_reply = models.TextField(blank=True, null=True)
+    replied_at = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Feedback from {self.user.username}"

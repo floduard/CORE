@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+  <h4>User Feedback</h4>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Message</th>
+        <th>Submitted</th>
+        <th>Reply</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for fb in feedbacks %}
+      <tr>
+        <td>{{ fb.user.username }}</td>
+        <td>{{ fb.message }}</td>
+        <td>{{ fb.submitted_at }}</td>
+        <td>{{ fb.admin_reply|default:"—" }}</td>
+        <td>
+            <a href="{% url 'reply_feedback' fb.pk %}" class="btn btn-sm btn-primary">Reply</a>
+            <form action="{% url 'delete_feedback' fb.pk %}" method="post" style="display:inline-block;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this feedback?')">Delete</button>
+            </form>
+          </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -41,6 +41,10 @@ def add_cybercrime(request):
                     message=f"A new cybercrime type '{new_crime.name}' has been added.",
                     url=f"/cybercrimes/{new_crime.pk}/"
                 )
+                ActivityLog.objects.create(
+                    user=request.user,
+                    action='Cybercrime category added'
+                )
             return redirect('available_cybercrimes')
     else:
         form = CybercrimeForm()
@@ -70,6 +74,10 @@ def delete_cybercrime(request, pk):
                     message=f"A new cybercrime type '{crime.name}' has been added.",
                     url=f"/cybercrimes/{crime.pk}/"
                 )
+                ActivityLog.objects.create(
+                    user=request.user,
+                    action='Cybercrime category deleted'
+                )
         return redirect('available_cybercrimes')
     return render(request, 'cases/cybercrime_confirm_delete.html', {'crime': crime})
 
@@ -95,6 +103,10 @@ def submit_cybercrime_report(request):
                     recipient=request.user,
                     message="Your cybercrime report was submitted successfully.Your Tracking ID is: {tracking_id} ",
                     url=reverse('report_detail', args=[report.pk])
+                )
+                ActivityLog.objects.create(
+                    user=request.user,
+                    action='Case submited'
                 )
             if request.user.is_authenticated:
               messages.success(request, f"Report submitted successfully! Your Tracking ID is: {report.tracking_id}")
@@ -222,6 +234,11 @@ def request_more_info(request, pk):
     if request.method == 'POST' and request.user.role in ['admin', 'officer']:
         report.request_more_info  = request.POST.get('request_more_info')
         report.save()
+        notify_user(
+                    recipient=request.user,
+                    message=f"More info requested .",
+                    url=f"/reports/{send_additional_details}/"
+                )
     return redirect('report_detail', pk=pk)
 
 @login_required
@@ -230,6 +247,11 @@ def provide_recommendation(request, pk):
     if request.method == 'POST' and request.user.role in ['admin', 'officer']:
         report.recommendations = request.POST.get('recommendations')
         report.save()
+        notify_user(
+                    recipient=request.user,
+                    message=f"Recomandations provided..",
+                    url=f"/reports/{provide_recommendation}/"
+                )
     return redirect('report_detail', pk=pk)
 
 @login_required
