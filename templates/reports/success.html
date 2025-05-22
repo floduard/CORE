@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+  <div class="card shadow-lg border-0">
+    <div class="card-body text-center p-5">
+      <h2 class="text-success">🎉 Report Submitted Successfully! and forward to our Team</h2>
+      <p class="lead mt-3">Thank you, {{user}} for submitting your report. We will get back to you soon.</p>
+
+      <p class="lead">In the meantime, you can check the status of your reports on the dashboard.</p>
+
+      <div class="row mt-4 justify-content-center">
+        <div class="col-md-3">
+          <div class="card bg-light border-0 text-center shadow-sm mb-3">
+            <div class="card-body">
+              <h5 class="card-title">Total Reports</h5>
+              <p class="display-6">{{ stats.total_reports }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-warning-subtle border-0 text-center shadow-sm mb-3">
+            <div class="card-body">
+              <h5 class="card-title">Pending</h5>
+              <p class="display-6">{{ stats.pending }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-success-subtle border-0 text-center shadow-sm mb-3">
+            <div class="card-body">
+              <h5 class="card-title">Resolved</h5>
+              <p class="display-6">{{ stats.resolved }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-secondary-subtle border-0 text-center shadow-sm mb-3">
+            <div class="card-body">
+              <h5 class="card-title">Closed</h5>
+              <p class="display-6">{{ stats.closed }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <a href="{% url 'dashboard' %}" class="btn btn-primary mt-4">Back to Home</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

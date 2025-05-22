@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container text-center mt-5">
+  <div class="alert alert-success shadow">
+    <h4 class="alert-heading">Success!</h4>
+    <p>Your report was submitted successfully and it is going to be handled by our team.</p>
+  </div>
+  <p class="text-muted">Redirecting to the dashboard in moments...</p>
+</div>
+
+<script>
+  // Redirect after 3 seconds
+  setTimeout(() => {
+    window.location.href = "{% url 'report_success' %}";
+  }, 3000);
+</script>
+{% endblock %}

@@ -12,6 +12,9 @@ urlpatterns = [
 
     # Report incident
     path('report/cybercrime/', views.submit_cybercrime_report, name='submit_cybercrime_report'),
+
+    # success
+    path('report-success/', views.report_success, name='report_success'),
     # Admin Actions On Reports
     path('admin/reports/', views.all_reports_view, name='all_reports'),
     path('admin/reports/<int:pk>/', views.report_detail_view, name='report_detail'),

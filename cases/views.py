@@ -74,7 +74,7 @@ def delete_cybercrime(request, pk):
                 notify_user(
                     recipient=user,
                     message=f"A new cybercrime type '{crime.name}' has been added.",
-                    url=f"/cybercrimes/{crime.pk}/"
+                    url=reverse('available_cybercrimes', args=[crime.pk])
                 )
                 ActivityLog.objects.create(
                     user=request.user,
@@ -103,16 +103,16 @@ def submit_cybercrime_report(request):
             if request.user.is_authenticated:
                 Notification.objects.create(
                     recipient=request.user,
-                    message="Your cybercrime report was submitted successfully.Your Tracking ID is: {tracking_id} ",
+                    message=f"Your cybercrime report was submitted successfully.Your Tracking ID is: {report.tracking_id} ",
                     url=reverse('report_detail', args=[report.pk])
                 )
                 ActivityLog.objects.create(
                     user=request.user,
-                    action='Case submited'
+                    action=f"Case with {report.tracking_id} Tracking ID submitted. "
                 )
             if request.user.is_authenticated:
               messages.success(request, f"Report submitted successfully! Your Tracking ID is: {report.tracking_id}")
-            return redirect('about') 
+            return redirect('report_success') 
              # Or wherever you want to redirect after submission
         else:
             messages.error(request, "Please correct the errors in the form.")
@@ -215,7 +215,7 @@ def update_report_status(request, pk):
             notify_user(
                     recipient=request.user,
                     message=f"Your Case Status updated to {new_status}.",
-                    url=f"/reports/{report.pk}/"
+                    url=reverse('report_detail', args=[report.pk])
                 )
             report.status = new_status
             report.save()
@@ -239,7 +239,7 @@ def request_more_info(request, pk):
         notify_user(
                     recipient=request.user,
                     message=f"More info requested .",
-                    url=f"/reports/{send_additional_details}/"
+                    url=reverse('report_detail', args=[report.pk])
                 )
     return redirect('report_detail', pk=pk)
 
@@ -252,7 +252,7 @@ def provide_recommendation(request, pk):
         notify_user(
                     recipient=request.user,
                     message=f"Recomandations provided..",
-                    url=f"/reports/{provide_recommendation}/"
+                     url=reverse('report_detail', args=[report.pk])
                 )
     return redirect('report_detail', pk=pk)
 
@@ -295,15 +295,15 @@ def assign_case_to_officer(request, pk):
                 messages.success(request, f"New Case Assigned: {case.tracking_id}.")
                 notify_user(
                     recipient=new_officer,
-                    message=f"New Case Assigned: {case.pk}.",
-                    url=f"/reports/{{case.pk}}/"
+                    message=f"New Case Assigned: {case.tracking_id}.",
+                     url=reverse('report_detail', args=[report.pk])
                 )
             else:
                 messages.success(request, f"New Case Assigned: {case.tracking_id}.")
                 notify_user(
                     recipient=new_officer,
                     message=f"New Case Assigned: {case.tracking_id}.",
-                    url=f"/reports/{{case.pk}}/"
+                     url=reverse('report_detail', args=[report.pk])
                 )
             # Log history
             CaseAssignmentHistory.objects.create(
@@ -413,3 +413,26 @@ def critical_cases(request):
     reports = CybercrimeReport.objects.filter(priority='critical')
     reports = get_reports_by_role(request, reports)
     return render(request, 'reports/report_list.html', {'reports': reports, 'title': 'Critical Cases'})
+
+
+
+
+def report_success(request):
+    if request.user.is_authenticated:
+        user = request.user
+        user_reports = CybercrimeReport.objects.filter(user=user)
+
+        stats = {
+            'total_reports': user_reports.count(),
+            'pending': user_reports.filter(status='pending').count(),
+            'resolved': user_reports.filter(status='resolved').count(),
+            'closed': user_reports.filter(status='closed').count(),
+        }
+
+        return render(request, 'reports/success.html', {
+            'user': user,
+            'stats': stats,
+        })
+
+    else:
+       return render(request, 'reports/report_success.html')
