@@ -5,7 +5,7 @@
 <div class="container text-center mt-5">
   <div class="alert alert-success shadow">
     <h4 class="alert-heading">Success!</h4>
-    <p>Your report was submitted successfully and it is going to be handled by our team.</p>
+    <p>Your profile updated successfully</p>
   </div>
   <p class="text-muted">Redirecting to the dashboard in moments...</p>
 </div>
@@ -13,7 +13,7 @@
 <script>
   // Redirect after 3 seconds
   setTimeout(() => {
-    window.location.href = "{% url 'about' %}";
+    window.location.href = "{% url 'profile' %}";
   }, 5000);
 </script>
 {% endblock %}

@@ -296,7 +296,7 @@ def assign_case_to_officer(request, pk):
                 notify_user(
                     recipient=new_officer,
                     message=f"New Case Assigned: {case.tracking_id}.",
-                     url=reverse('report_detail', args=[report.pk])
+                     url=reverse('report_detail', args=[case.pk])
                 )
             else:
                 messages.success(request, f"New Case Assigned: {case.tracking_id}.")

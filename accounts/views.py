@@ -40,7 +40,7 @@ import csv
 from django.http import HttpResponse
 from reportlab.pdfgen import canvas
 from io import BytesIO
-
+from django.views.decorators.http import require_GET
 
 
 def officer_required(view_func):
@@ -92,58 +92,6 @@ def dashboard(request):
         return render(request, 'accounts/dashboards/citizen_dashboard.html', {
             'recent_activities': recent_activities
         })
-
-@login_required
-def view_profile(request):
-    user = request.user
-    profile = None
-    profile_fields = []
-
-    if user.role == 'admin':
-        profile = getattr(user, 'adminprofile', None)
-    elif user.role == 'officer':
-        profile = getattr(user, 'officerprofile', None)
-    elif user.role == 'citizen':
-        profile = getattr(user, 'citizenprofile', None)
-
-    if profile:
-        profile_fields = [
-            {'label': field.verbose_name, 'value': getattr(profile, field.name)}
-            for field in profile._meta.fields
-            if field.name not in ['id', 'user']  # exclude technical fields
-        ]
-
-    return render(request, 'accounts/profiles/view_profile.html', {
-        'user': user,
-        'profile': profile,
-        'profile_fields': profile_fields,
-    })
-
-@login_required
-@login_required
-def edit_profile(request):
-    user = request.user
-
-    if user.role == 'admin':
-        profile = user.adminprofile
-        form_class = AdminProfileForm
-    elif user.role == 'officer':
-        profile = user.officerprofile
-        form_class = OfficerProfileForm
-    else:
-        profile = user.citizenprofile
-        form_class = CitizenProfileForm
-
-    if request.method == 'POST':
-        form = form_class(request.POST, request.FILES, instance=profile)
-        if form.is_valid():
-            form.save()
-            return redirect('profile')  # replace with your profile view name
-    else:
-        form = form_class(instance=profile)
-
-    return render(request, 'accounts/profiles/edit_profile.html', {'form': form})
-
 
 def activate_account(request, uid, token):
     try:
@@ -371,25 +319,27 @@ def all_notifications(request):
         'notifications': notifications
     })
 
+@require_GET
+@login_required
 def fetch_notifications(request):
-    if request.user.is_authenticated:
-        notifications = Notification.objects.filter(recipient =request.user, is_read=False)[:10]
-        data = [{
-            'id': n.id,
-            'message': n.message,
-            'timestamp': n.created_at.strftime("%Y-%m-%d %H:%M"),
-        } for n in notifications]
-        return JsonResponse({'notifications': data, 'count': notifications.count()})
-    return JsonResponse({'notifications': [], 'count': 0})
-
+    notifications = Notification.objects.filter(recipient=request.user, is_read=False).order_by('-created_at')[:10]
+    data = [{
+        'id': n.id,
+        'message': n.message,
+        'timestamp': n.created_at.strftime("%Y-%m-%d %H:%M"),
+        'url': n.url if hasattr(n, 'url') else '#'
+    } for n in notifications]
+    
+    return JsonResponse({'notifications': data, 'count': notifications.count()})
 
 @require_POST
+@login_required
 def mark_notifications_read(request):
-    if request.user.is_authenticated:
-        Notification.objects.filter(recipient =request.user, is_read=False).update(is_read=True)
-        return JsonResponse({'status': 'success'})
-    return JsonResponse({'status': 'unauthenticated'}, status=401)
+    Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+    return JsonResponse({'status': 'success'})
 
+
+@require_GET
 @login_required
 def unread_notifications(request):
     notifications = Notification.objects.filter(recipient=request.user, is_read=False).order_by('-created_at')
@@ -399,20 +349,22 @@ def unread_notifications(request):
             {
                 "id": n.id,
                 "message": n.message,
-                "url": n.url,
+                "url": n.url if hasattr(n, 'url') else '#',
                 "created_at": n.created_at.strftime('%Y-%m-%d %H:%M'),
             }
             for n in notifications
         ]
     })
 
+
 @require_POST
 @login_required
 def mark_as_read(request, pk):
-    notif = get_object_or_404(Notification, pk=pk, user=request.user)
+    notif = get_object_or_404(Notification, pk=pk, recipient=request.user)
     notif.is_read = True
     notif.save()
     return JsonResponse({"success": True})
+
 
 
 
@@ -536,3 +488,35 @@ def generate_report(request):
 
     else:
         return render(request, '403.html')
+
+
+@login_required
+def profile_view(request):
+    return render(request, 'accounts/profiles/profile_view.html')
+
+
+@login_required
+def edit_profile(request):
+    user = request.user
+    if request.method == 'POST':
+        form = CombinedUserProfileForm(request.POST, request.FILES, instance=user, user=user)
+        password_form = PasswordChangeForm(user=user, data=request.POST)
+        
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Profile updated successfully.")
+            return redirect('profile_view')
+        
+        elif password_form.is_valid():
+            password_form.save()
+            update_session_auth_hash(request, password_form.user)
+            messages.success(request, "Password changed successfully.")
+            return redirect('edit_profile')
+    else:
+        form = CombinedUserProfileForm(instance=user, user=user)
+        password_form = PasswordChangeForm(user=user)
+
+    return render(request, 'accounts/profiles/profile.html', {
+        'form': form,
+        'password_form': password_form,
+    })

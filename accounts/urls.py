@@ -14,8 +14,9 @@ urlpatterns = [
    
 
     # Profiles
-     path('profile/', views.view_profile, name='profile'),
-    path('profile/edit/', views.edit_profile, name='edit_profile'),
+    path('profile/', views.edit_profile, name='profile'),
+    path('profile/view/', views.profile_view, name='profile_view'),
+
 
     # add Users
     path('admin/add-user/', views.add_user, name='add_user'),
@@ -44,6 +45,9 @@ urlpatterns = [
     path('notifications/mark-read/', views.mark_notifications_read, name='mark_notifications_read'),
     path('notifications/unread/', views.unread_notifications, name='unread_notifications'),
     path('notifications/read/<int:pk>/', views.mark_as_read, name='mark_notification_read'),
+    path('notifications/mark/<int:pk>/', views.mark_as_read, name='mark_as_read'),
+
+
 
     # statistics redirect
 

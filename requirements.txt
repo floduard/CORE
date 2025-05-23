@@ -2,11 +2,13 @@ asgiref==3.8.1
 chardet==5.2.0
 dj-database-url==2.3.0
 Django==5.2.1
+django-crispy-forms==2.4
 django-environ==0.12.0
 django-widget-tweaks==1.5.0
 pillow==11.2.1
 psycopg2-binary==2.9.10
 python-dotenv==1.1.0
 reportlab==4.4.1
+sorl-thumbnail==12.11.0
 sqlparse==0.5.3
 typing_extensions==4.13.2

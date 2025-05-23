@@ -31,6 +31,8 @@ INSTALLED_APPS = [
     'resources',
     'cases',
     'widget_tweaks',
+    'crispy_forms',
+    'sorl.thumbnail',
    
 ]
 

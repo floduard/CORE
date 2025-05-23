@@ -391,6 +391,28 @@
     // Poll every 30 seconds
     setInterval(fetchNotifications, 30000);
     document.addEventListener("DOMContentLoaded", fetchNotifications);
+
+    function updateNotifList(notifs) {
+      const list = document.getElementById('notif-list');
+      list.innerHTML = '';
+      if (notifs.length === 0) {
+        list.innerHTML = '<li><span class="dropdown-item text-muted">No new notifications</span></li>';
+      } else {
+        notifs.forEach(notif => {
+          const li = document.createElement('li');
+          li.innerHTML = `<a href="${notif.url}" class="dropdown-item">${notif.text}</a>`;
+          list.appendChild(li);
+        });
+      }
+      // Add divider and "View All" again
+      list.innerHTML += `
+        <li><hr class="dropdown-divider"></li>
+        <li>
+          <a href="{% url 'all_notifications' %}" class="dropdown-item text-center text-primary">
+            View All Notifications
+          </a>
+        </li>`;
+    }
   </script>
 
   <!-- Footer -->

@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+{% load thumbnail %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+<style>
+.profile-sidebar .card {
+  background: linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%);
+  border-radius: 1rem;
+}
+.profile-avatar {
+  border: 4px solid #0d6efd;
+  box-shadow: 0 2px 12px rgba(13,110,253,0.08);
+  background: #f8f9fa;
+  width: 128px;
+  height: 128px;
+  object-fit: cover;
+}
+.profile-sidebar .profile-name {
+  font-weight: bold;
+  font-size: 1.3rem;
+}
+.profile-sidebar .profile-role {
+  font-size: 1rem;
+  color: #6c757d;
+}
+.profile-sidebar .profile-field i {
+  min-width: 24px;
+}
+.profile-sidebar .profile-field {
+  margin-bottom: .75rem;
+}
+</style>
+
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-10">
+      <div class="card shadow rounded">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Profile</h5>
+        </div>
+        <div class="card-body">
+          <!-- Bootstrap Tabs -->
+          <ul class="nav nav-tabs mb-3" id="profileTab" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="view-tab" data-bs-toggle="tab" data-bs-target="#view" type="button" role="tab">View Profile</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab">Edit Profile</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="password-tab" data-bs-toggle="tab" data-bs-target="#password" type="button" role="tab">Change Password</button>
+            </li>
+          </ul>
+          <div class="tab-content" id="profileTabContent">
+            <!-- View Profile Tab -->
+            <div class="tab-pane fade show active" id="view" role="tabpanel">
+              <div class="row">
+                <!-- Sidebar -->
+                <div class="col-md-4 mb-4 profile-sidebar">
+                  <div class="card text-center p-4 position-sticky" style="top: 80px;">
+                    <div class="mb-3">
+                      {% if form.instance.get_profile.profile_picture %}
+                        {% thumbnail form.instance.get_profile.profile_picture "128x128" crop="center" as im %}
+                          <img src="{{ im.url }}" class="rounded-circle profile-avatar" alt="Profile Picture">
+                        {% endthumbnail %}
+                      {% else %}
+                        <img src="{% static 'default-profile.png' %}" class="rounded-circle profile-avatar" alt="Profile Picture">
+                      {% endif %}
+                    </div>
+                    <div class="profile-name mb-1">{{ form.instance.get_profile.full_name|default:form.instance.username }}</div>
+                    <div class="profile-role mb-2">
+                      <i class="bi bi-person-badge me-1"></i>
+                      {{ form.instance.get_profile.role|default:"User" }}
+                    </div>
+                    <div class="profile-field text-secondary">
+                      <i class="bi bi-envelope-fill me-2 text-primary"></i>{{ form.instance.email }}
+                    </div>
+                  </div>
+                </div>
+                <!-- Main Profile Info -->
+                <div class="col-md-8">
+                  <div class="card shadow-sm rounded p-4">
+                    <h6 class="fw-bold mb-3">
+                      <i class="bi bi-info-circle me-2 text-primary"></i>Profile Details
+                    </h6>
+                    <dl class="row mb-0">
+                      {# Field skipping logic based on user role, as in edit_profile #}
+                      {% for field in form %}
+                        {% if user.role == "citizen" and field.name in "badge_id,department,office_name,managed_since" %}
+                          {# skip #}
+                        {% elif user.role == "officer" and field.name in "id_number,birth_date,office_name,managed_since" %}
+                          {# skip #}
+                        {% elif user.role == "admin" and field.name in "id_number,birth_date,badge_id,department" %}
+                          {# skip #}
+                        {% elif field.name == "profile_picture" %}
+                          {# skip profile_picture in main info #}
+                        {% else %}
+                          <dt class="col-sm-4 text-muted d-flex align-items-center">
+                            {% if field.name == "email" %}
+                              <i class="bi bi-envelope-fill text-primary me-2"></i>
+                            {% elif field.name == "first_name" %}
+                              <i class="bi bi-person-fill text-primary me-2"></i>
+                            {% elif field.name == "last_name" %}
+                              <i class="bi bi-person-fill text-primary me-2"></i>
+                            {% elif field.name == "phone" %}
+                              <i class="bi bi-telephone-fill text-primary me-2"></i>
+                            {% elif field.name == "role" %}
+                              <i class="bi bi-person-badge text-primary me-2"></i>
+                            {% elif field.name == "bio" %}
+                              <i class="bi bi-card-text text-primary me-2"></i>
+                            {% elif field.name == "address" %}
+                              <i class="bi bi-geo-alt-fill text-primary me-2"></i>
+                            {% elif field.name == "date_of_birth" %}
+                              <i class="bi bi-calendar-event-fill text-primary me-2"></i>
+                            {% elif field.name == "badge_id" %}
+                              <i class="bi bi-award-fill text-primary me-2"></i>
+                            {% elif field.name == "department" %}
+                              <i class="bi bi-building text-primary me-2"></i>
+                            {% elif field.name == "office_name" %}
+                              <i class="bi bi-building-fill text-primary me-2"></i>
+                            {% elif field.name == "managed_since" %}
+                              <i class="bi bi-calendar-check-fill text-primary me-2"></i>
+                            {% elif field.name == "id_number" %}
+                              <i class="bi bi-hash text-primary me-2"></i>
+                            {% endif %}
+                            {{ field.label }}
+                          </dt>
+                          <dd class="col-sm-8 mb-2">
+                            <span class="form-control-plaintext">{{ field.value|default:"-" }}</span>
+                          </dd>
+                        {% endif %}
+                      {% endfor %}
+                    </dl>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Edit Profile Tab -->
+            <div class="tab-pane fade" id="info" role="tabpanel">
+              <form method="post" enctype="multipart/form-data" class="row g-3">
+                {% csrf_token %}
+                <!-- Profile Picture Display and Upload -->
+                <div class="col-md-12 text-center">
+                  <div class="d-inline-block position-relative">
+                    {% if form.instance.get_profile.profile_picture %}
+                      {% thumbnail form.instance.get_profile.profile_picture "128x128" crop="center" as im %}
+                        <img id="profilePreview" src="{{ im.url }}" class="rounded-circle mb-3 border border-3 border-primary shadow" style="width: 128px; height: 128px; object-fit: cover; transition: box-shadow 0.2s;">
+                      {% endthumbnail %}
+                    {% else %}
+                      <img id="profilePreview" src="{% static 'default-profile.png' %}" class="rounded-circle mb-3 border border-3 border-primary shadow" style="width: 128px; height: 128px; object-fit: cover; transition: box-shadow 0.2s;">
+                    {% endif %}
+                    <span class="position-absolute bottom-0 end-0 translate-middle p-1 bg-white rounded-circle border border-primary" style="cursor:pointer;">
+                      <i class="bi bi-camera text-primary"></i>
+                    </span>
+                  </div>
+                  <div class="mt-2">
+                    <label for="{{ form.profile_picture.id_for_label }}" class="form-label fw-semibold text-primary">Change Profile Picture</label>
+                  </div>
+                  {{ form.profile_picture|add_class:"form-control" }}
+                </div>
+                <!-- Other Fields -->
+                {% for field in form %}
+                  {% if field.name != 'profile_picture' %}
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold">{{ field.label }}</label>
+                      {{ field|add_class:"form-control" }}
+                      {% if field.help_text %}
+                        <div class="form-text text-muted">{{ field.help_text }}</div>
+                      {% endif %}
+                      {% for error in field.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                {% endfor %}
+                <div class="col-12 mt-3">
+                  <button type="submit" class="btn btn-success">Save Changes</button>
+                </div>
+              </form>
+            </div>
+            <!-- Change Password Tab -->
+            <div class="tab-pane fade" id="password" role="tabpanel">
+              <form method="post" action="{% url 'password_change' %}" class="row g-3 mt-3">
+                {% csrf_token %}
+                {{ password_form.as_p }}
+                <div class="col-12">
+                  <button type="submit" class="btn btn-warning">Change Password</button>
+                </div>
+              </form>
+            </div>
+          </div> <!-- tab-content -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const input = document.querySelector('input[type="file"][name="profile_picture"]');
+    const preview = document.getElementById('profilePreview');
+    if (input && preview) {
+      input.addEventListener("change", function (event) {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            preview.src = e.target.result;
+            preview.style.width = '128px';
+            preview.style.height = '128px';
+            preview.style.objectFit = 'cover';
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+    // Optional: Activate correct tab based on hash in URL
+    const tabs = document.querySelectorAll('#profileTab button[data-bs-toggle="tab"]');
+    const tabContent = document.getElementById('profileTabContent');
+    if (window.location.hash && tabContent) {
+      const hash = window.location.hash;
+      tabs.forEach((tab) => {
+        if (tab.dataset.bsTarget === hash) {
+          new bootstrap.Tab(tab).show();
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}
