@@ -476,3 +476,23 @@ def report_success(request):
 
     else:
        return render(request, 'reports/report_success.html')
+
+
+@login_required
+def report_logs(request, report_id):
+    report = get_object_or_404(CybercrimeReport, id=report_id)
+
+    # Optional: Restrict access
+    if request.user.role != 'admin' and request.user != report.assigned_officer:
+        return HttpResponseForbidden("You are not allowed to view this report's logs.")
+
+    logs = report.activity_logs.select_related('user')
+    paginator = Paginator(logs, 10)  # Show 10 logs per page
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'partial/audit_history.html', {
+        'report': report,
+        'page_obj': page_obj,
+    })

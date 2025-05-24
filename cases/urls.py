@@ -56,6 +56,10 @@ urlpatterns = [
 path('reports/<int:pk>/update-status/', views.update_report_status, name='update_report_status'),
 path('reports/<int:pk>/update-priority/', views.update_report_priority, name='update_report_priority'),
 
+# logs
+# urls.py
+path('reports/<int:report_id>/logs/', views.report_logs, name='report_logs'),
+
 
 ]
     
