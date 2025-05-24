@@ -281,6 +281,46 @@ def update_status_priority(request, pk):
 # views.py
 
 @login_required
+def update_report_status(request, pk):
+    report = get_object_or_404(CybercrimeReport, pk=pk)
+    if request.user.role != 'officer':
+        return redirect('permission_denied')
+
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        old_status = report.status
+        report.status = new_status
+        report.save()
+
+        ActivityLog.objects.create(
+            user=request.user,
+            action=f"Report with {report.tracking_id} Tracking ID Status updated from '{old_status}' to '{new_status}'",
+            timestamp=now()
+        )
+
+        return redirect('report_detail', pk=pk)
+
+@login_required
+def update_report_priority(request, pk):
+    report = get_object_or_404(CybercrimeReport, pk=pk)
+    if request.user.role != 'admin':
+        return redirect('permission_denied')
+
+    if request.method == 'POST':
+        new_priority = request.POST.get('priority')
+        old_priority = report.priority
+        report.priority = new_priority
+        report.save()
+
+        ActivityLog.objects.create(
+            user=request.user,
+            action=f"Report with {report.tracking_id} Tracking ID priority updated from '{old_priority}' to '{new_priority}'",
+            timestamp=now()
+        )
+
+        return redirect('report_detail', pk=pk)
+
+@login_required
 @user_passes_test(lambda u: u.role == 'admin')
 def assign_case_to_officer(request, pk):
     case = get_object_or_404(CybercrimeReport, pk=pk)

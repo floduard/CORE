@@ -1,0 +1,21 @@
+<div class="modal fade" id="additionalDetailsModal" tabindex="-1">
+    <div class="modal-dialog">
+      <form method="post" action="{% url 'send_additional_details' report.id %}">
+        {% csrf_token %}
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Provide Additional Information</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <textarea name="more_details" rows="5" class="form-control" required></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Submit</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  

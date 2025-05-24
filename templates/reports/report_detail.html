@@ -39,235 +39,57 @@
             {% endif %}
         </div>
         <hr class="my-4">
-        <div class="row">
-            <div class="col-md-6">
-                <p class="detail-label">Tracking ID:</p>
-                <p class="detail-value">{{ report.tracking_id }}</p>
-            </div>
-            <div class="col-md-6">
-                <p class="detail-label">Cybercrime Type:</p>
-                <p class="detail-value">{{ report.crime_type }}</p>
-            </div>
 
-            <div class="col-md-6">
-                <p class="detail-label">Status:</p>
-                <p class="detail-value">{{ report.status }}</p>
-            </div>
-            {% if user.is_authenticated and user.role == 'admin' or user.role == 'officer' %}
-            <div class="col-md-6">
-                <p class="detail-label">Priority:</p>
-                <p class="detail-value">{{ report.priority }}</p>
-            </div>
+        <ul class="nav nav-tabs" id="reportTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab">Details</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="actions-tab" data-bs-toggle="tab" data-bs-target="#actions" type="button" role="tab">Actions</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="responses-tab" data-bs-toggle="tab" data-bs-target="#responses" type="button" role="tab">Responses</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="evidence-tab" data-bs-toggle="tab" data-bs-target="#evidence" type="button" role="tab">Evidences</button>
+            </li>
+            {% if user.role == 'admin' or user.role == 'officer' %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="evidence-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">History</button>
+            </li>
             {% endif %}
-            {% if user.is_authenticated and user.role == 'admin' or user.role == 'officer' %}
-            <hr class="my-4">
+        </ul>
 
-              <form method="post" action="{% url 'update_status_priority' report.pk %}" class="row g-3 mt-2">
-                {% csrf_token %}
-            <div class="col-md-6">
-        <label for="status" class="form-label">Status</label>
-        <select name="status" id="status" class="form-select" required>
-            <option value="Pending" {% if report.status == 'Pending' %}selected{% endif %}>Pending</option>
-            <option value="Under Investigation" {% if report.status == 'Under Investigation' %}selected{% endif %}>Under Investigation</option>
-            <option value="Resolved" {% if report.status == 'Resolved' %}selected{% endif %}>Resolved</option>
-            <option value="Closed" {% if report.status == 'Closed' %}selected{% endif %}>Closed</option>
-        </select>
-    </div>
-    <div class="col-md-6">
-        <label for="priority" class="form-label">Priority</label>
-        <select name="priority" id="priority" class="form-select" required>
-            <option value="Low" {% if report.priority == 'Low' %}selected{% endif %}>Low</option>
-            <option value="Medium" {% if report.priority == 'Medium' %}selected{% endif %}>Medium</option>
-            <option value="High" {% if report.priority == 'High' %}selected{% endif %}>High</option>
-            <option value="Critical" {% if report.priority == 'Critical' %}selected{% endif %}>Critical</option>
-        </select>
-    </div>
-    <div class="col-12">
-        <button type="submit" class="btn btn-primary mt-2">Update</button>
-    </div>
-</form>
-          
-            {% endif %}
-            <hr class="my-4">
-            <div class="col-md-6">
-                <p class="detail-label">Date of Incident:</p>
-                <p class="detail-value">{{ report.date }}</p>
+        <div class="tab-content p-4" id="reportTabsContent">
+            <div class="tab-pane fade show active" id="details" role="tabpanel">
+                {% include 'partials/report_details_tab.html' %}
             </div>
-            <div class="col-md-6">
-                <p class="detail-label">Submitted On:</p>
-                <p class="detail-value">{{ report.date|date:"Y-m-d" }}</p>
+            <div class="tab-pane fade" id="actions" role="tabpanel">
+                {% include 'partials/officer_actions_tab.html' %}
             </div>
-            <div class="col-md-6">
-              <p class="detail-label">Assigned To:</p>
-              <p class="detail-value">{{ report.assignee }}</p>
-              {% if user.is_authenticated and user.role == 'admin' %}
-              <a href="{% url 'assign_case' report.pk %}" class="btn btn-sm btn-outline-primary">
-                  {% if report.assignee %} Reassign {% else %} Assign Officer {% endif %}
-              </a>
-               {% endif %}
+            <div class="tab-pane fade" id="responses" role="tabpanel">
+                {% include 'partials/citizen_responses_tab.html' %}
             </div>
-          <div class="col-md-4">
-                <p class="detail-label">Country:</p>
-                <p class="detail-value">{{ report.country }}</p>
+            <div class="tab-pane fade" id="evidence" role="tabpanel">
+                {% include 'partials/evidence_tab.html' %}
             </div>
-            <div class="col-md-4">
-                <p class="detail-label">Province / City:</p>
-                <p class="detail-value">{{ report.province_city }}</p>
+            <div class="tab-pane fade" id="history" role="tabpanel">
+                {% include 'partials/audit_history.html' %}
             </div>
-            <div class="col-md-4">
-                <p class="detail-label">District:</p>
-                <p class="detail-value">{{ report.district|default:"-" }}</p>
-            </div>
-
-            <div class="col-md-12">
-                <p class="detail-label">Description:</p>
-                <p class="detail-value">{{ report.description }}</p>
-            </div>
-
-            <div class="col-md-12">
-                <p class="detail-label">Suspects:</p>
-                <p class="detail-value">{{ report.suspects|default:"None provided" }}</p>
-            </div>
-            <div class="col-md-12">
-                <p class="detail-label">Additional Contacts:</p>
-                <p class="detail-value">{{  report.additional_contacts|default:"not yet provided" }}</p>
-            </div>
-            <hr class="my-4">
-            <div class="col-md-12">
-                <p class="detail-label">Additional information</p>
-                <p class="detail-value">{{ report.more_details|default:"not yet provided" }}</p>
-                {% if user.is_authenticated and user.role in 'citizen' %}
-                <hr class="my-4">
-                <div class="d-flex flex-wrap gap-3">
-                    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#additionalDetailsModal">➕ Send Additional Details</button>
-        
-                </div>
-                {% endif %}
-            </div>
-            
-            <hr class="my-4">
-            <div class="col-md-12">
-                <p class="detail-label">Request More Details:</p>
-                <p class="detail-value">{{ report.request_more_info|default:"not yet requested" }}</p>
-                {% if user.is_authenticated and user.role in 'admin officer' %}
-                
-                <div class="d-flex flex-wrap gap-3">
-                    <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#requestMoreInfoModal">❓ Request More Info</button>
-                    
-                </div>
-                {% endif %}
-            </div>
-            <hr class="my-4">
-            <div class="col-md-12">
-                <p class="detail-label">Recommendations:</p>
-                <p class="detail-value">{{ report.recommendations|default:"not yet provided" }}</p>
-                {% if user.is_authenticated and user.role in 'admin officer' %}
-                
-                <div class="d-flex flex-wrap gap-3">
-        
-                    <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#recommendationModal">💡 Provide Recommendation</button>
-                    
-                </div>
-                {% endif %}
-            </div>
-            <hr class="my-4">
-            {% if report.evidence %}
-              <div class="col-md-12">
-                  <p class="detail-label">Evidence:</p>
-                  <p class="detail-value">
-                      <a href="{{ report.evidence.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
-                          View / Download Evidence
-                      </a>
-                  </p>
-              </div>
-            {% else %}
-                <div class="col-md-12">
-                  <p class="detail-label">Evidence:</p>
-                  <p class="detail-value">
-                      <a href="#" target="_blank" class="btn btn-sm btn-outline-secondary disabled">
-                         No evidence provided
-                      </a>
-                  </p>
-              </div>
-            {% endif %}
-
         </div>
 
+        {% if user.is_authenticated and user.role == 'admin' or user.role == 'officer' %}
+        <a href="{% url 'case_assignment_history' report.pk %}" class="btn btn-secondary mt-3">🕘 View Assignment History</a>
+        {% endif %}
 
-      
     </div>
-
-    {% if user.is_authenticated and user.role == 'admin' or user.role == 'officer' %}
-    <a href="{% url 'case_assignment_history' report.pk %}" class="btn btn-secondary mt-3">🕘 View Assignment History</a>
-{% endif %}
-
 </div>
 
 <!-- Modals -->
-<div class="modal fade" id="additionalDetailsModal" tabindex="-1">
-  <div class="modal-dialog">
-    <form method="post" action="{% url 'send_additional_details' report.pk %}">
-      {% csrf_token %}
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Send Additional Details</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <textarea name="more_details" class="form-control" rows="4" placeholder="Enter additional details..." required></textarea>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-primary shadow-sm">
-            <i class="bi bi-send">Send</button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-
-<div class="modal fade" id="requestMoreInfoModal" tabindex="-1">
-  <div class="modal-dialog">
-    <form method="post" action="{% url 'request_more_info' report.pk %}">
-      {% csrf_token %}
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Request More Information</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <textarea name="additional_contacts" class="form-control" rows="4" placeholder="What extra information do you need?" required></textarea>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-primary shadow-sm">
-            <i class="bi bi-send">Send Request</button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-
-<div class="modal fade" id="recommendationModal" tabindex="-1">
-  <div class="modal-dialog">
-    <form method="post" action="{% url 'provide_recommendation' report.pk %}">
-      {% csrf_token %}
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Provide Recommendation</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <textarea name="recommendations" class="form-control" rows="4" placeholder="Enter your recommendation..." required></textarea>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-primary shadow-sm">
-            <i class="bi bi-send">Submit</button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
+{% include 'partials/modals/additional_details_modal.html' %}
+{% include 'partials/modals/request_more_info_modal.html' %}
+{% include 'partials/modals/recommendation_modal.html' %}
 
 <!-- Ensure Bootstrap JS is loaded -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 {% endblock %}

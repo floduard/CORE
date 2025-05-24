@@ -1,0 +1,30 @@
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-danger text-white fw-bold">Audit History</div>
+    <div class="card-body">
+        {% if ActivityLog %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover table-sm align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            
+                            <th>User</th>
+                            <th>Action</th>
+                            <th>TimeStamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in ActivityLog %}
+                        <tr>
+                            <td>{{ log.user }}</td>
+                            <td class="text-uppercase small text-muted">{{ log.action }}</td>
+                            <td>{{ log.timestamp }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-muted">No audit log entries available.</p>
+        {% endif %}
+    </div>
+</div>

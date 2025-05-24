@@ -1,0 +1,21 @@
+<div class="modal fade" id="recommendationModal" tabindex="-1">
+    <div class="modal-dialog">
+      <form method="post" action="{% url 'provide_recommendation' report.id %}">
+        {% csrf_token %}
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Submit Recommendation</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <textarea name="recommendation" rows="5" class="form-control" required></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-success">Submit</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  

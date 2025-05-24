@@ -121,12 +121,20 @@
     <div class="ms-auto d-flex align-items-center">
       {% if user.is_authenticated %}
       <div class="d-flex align-items-center">
-        <a href="#" class="d-flex align-items-center text-white text-decoration-none">
-          <img src="{{ user.profile.image.url }}" 
-               alt="Profile Picture" 
-               width="32" height="32" 
-               class="rounded-circle me-2"
-               onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/identicon/svg?seed={{ user.username }}';">
+        <a href="{% url 'profile' %}" class="d-flex align-items-center text-white text-decoration-none">
+          
+          {% if user.profile_picture and user.profile_picture.url %}
+            <img src="{{ user.profile_picture.url }}" 
+                alt="Picture" 
+                width="32" height="32" 
+                class="rounded-circle me-2">
+          {% else %}
+            <img src="{% static 'default-profile.png' %}" 
+                alt="Default Picture" 
+                width="32" height="32" 
+                class="rounded-circle me-2">
+          {% endif %}
+          
           <span>{{ user.username }} : {{ user.role|title }}</span>
         </a>
                 <!-- Notification Icon -->
@@ -164,7 +172,18 @@
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="settingsDropdown">
             <li>
               <a class="dropdown-item" href="{% url 'profile' %}">
-                <i class="bi bi-person-circle me-2"></i> My Profile
+                {% if user.profile_picture and user.profile_picture.url %}
+                  <img src="{{ user.profile_picture.url }}" 
+                      alt="Picture" 
+                      width="32" height="32" 
+                      class="rounded-circle me-2">
+                {% else %}
+                  <img src="{% static 'default-profile.png' %}" 
+                      alt="Default Picture" 
+                      width="32" height="32" 
+                      class="rounded-circle me-2" >
+                {% endif %}
+                 My Profile
               </a>
             </li>
             <li>
@@ -219,9 +238,6 @@
                 </a>
                 <a href="{% url 'all_reports' %}">
                     <i class="bi bi-folder2-open me-2"></i> Reported Incidents
-                </a>
-                <a href="{% url 'assigned_reports' %}">
-                    <i class="bi bi-folder2-open me-2"></i> My Assign
                 </a>
                 <a href="{% url 'submit_cybercrime_report' %}">
                   <i class="bi bi-exclamation-octagon me-2"></i> Report New Incident

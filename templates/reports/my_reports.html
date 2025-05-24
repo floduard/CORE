@@ -17,6 +17,7 @@
                     <th>Type</th>
                     <th>Status</th>                
                     <th>Assigned To</th>
+                    <th>Date of Incident</th>
                     <th>Submitted On</th>
                     <th>Actions</th>
                 </tr>
@@ -36,6 +37,7 @@
                         {% endif %}
                     </td>
                     <td>{{ report.date|date:"Y-m-d" }}</td>
+                    <td>{{ report.submitted_at|date:"Y-m-d" }}</td>
                     <td>
                         <a href="{% url 'report_detail' report.pk %}" class="btn btn-sm btn-info">View</a>
                         {% if report.status|lower == 'pending' %}

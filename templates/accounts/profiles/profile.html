@@ -63,8 +63,8 @@
                 <div class="col-md-4 mb-4 profile-sidebar">
                   <div class="card text-center p-4 position-sticky" style="top: 80px;">
                     <div class="mb-3">
-                      {% if form.instance.get_profile.profile_picture %}
-                        {% thumbnail form.instance.get_profile.profile_picture "128x128" crop="center" as im %}
+                      {% if form.instance.profile_picture %}
+                        {% thumbnail form.instance.profile_picture "128x128" crop="center" as im %}
                           <img src="{{ im.url }}" class="rounded-circle profile-avatar" alt="Profile Picture">
                         {% endthumbnail %}
                       {% else %}
@@ -146,8 +146,8 @@
                 <!-- Profile Picture Display and Upload -->
                 <div class="col-md-12 text-center">
                   <div class="d-inline-block position-relative">
-                    {% if form.instance.get_profile.profile_picture %}
-                      {% thumbnail form.instance.get_profile.profile_picture "128x128" crop="center" as im %}
+                    {% if form.instance.profile_picture %}
+                      {% thumbnail form.instance.profile_picture "128x128" crop="center" as im %}
                         <img id="profilePreview" src="{{ im.url }}" class="rounded-circle mb-3 border border-3 border-primary shadow" style="width: 128px; height: 128px; object-fit: cover; transition: box-shadow 0.2s;">
                       {% endthumbnail %}
                     {% else %}

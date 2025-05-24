@@ -1,0 +1,104 @@
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-secondary text-white fw-bold">Officer Actions</div>
+    <div class="card-body">
+        <table class="table table-sm">
+            <tr><th>Status</th><td>{{ report.status }}</td></tr>
+            <tr><th>Priority</th><td>{{ report.priority }}</td></tr>
+            <tr><th>Assigned Officer</th><td>{{ report.assignee.username }}</td></tr>
+        </table>
+
+        
+            <div class="alert alert-success mt-3">
+                <strong>Recommendation:</strong><br> {{ report.recommendations|linebreaks }}
+            </div>
+            <div class="alert alert-success mt-3">
+                <strong>Requested Info:</strong><br> {{ report.request_more_info|linebreaks }}
+            </div>
+        
+
+        {% if user.role == 'officer' and report.status == 'closed' %}
+            <div class="mt-4 d-flex gap-2">
+                <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#recommendationModal">
+                    <i class="bi bi-lightbulb"></i> Recommend Action
+                </button>   
+            </div>         
+        {% endif %}
+
+        {% if user.role == 'admin' or user.role == 'officer' %}
+            <div class="mt-4 d-flex gap-2">
+                <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#requestMoreInfoModal">
+                    <i class="bi bi-question-circle"></i> Request More Info
+                </button>
+            </div>
+        {% endif %}
+        {% if user.role == 'officer' %}
+        <button class="btn btn-outline-primary mt-3" data-bs-toggle="modal" data-bs-target="#updateStatusModal">
+            <i class="bi bi-pencil-square"></i> Update Status
+        </button>
+        {% endif %}
+        {% if user.role == 'admin' %}
+        <button class="btn btn-outline-danger mt-3" data-bs-toggle="modal" data-bs-target="#updatePriorityModal">
+            <i class="bi bi-exclamation-circle"></i> Change Priority
+        </button>
+        {% endif %}
+
+
+    </div>
+</div>
+
+<div class="modal fade" id="updateStatusModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-3 shadow">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">Update Report Status</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="POST" action="{% url 'update_report_status' report.id %}">
+          {% csrf_token %}
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Select New Status</label>
+              <select class="form-select" name="status" required>
+                <option value="in_review" {% if report.status == "in_review" %}selected{% endif %}>In Review</option>
+                <option value="investigating" {% if report.status == "investigating" %}selected{% endif %}>Investigating</option>
+                <option value="closed" {% if report.status == "closed" %}selected{% endif %}>Closed</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Update</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="modal fade" id="updatePriorityModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-3 shadow">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title">Update Report Priority</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="POST" action="{% url 'update_report_priority' report.id %}">
+          {% csrf_token %}
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Select Priority Level</label>
+              <select class="form-select" name="priority" required>
+                <option value="low" {% if report.priority == "low" %}selected{% endif %}>Low</option>
+                <option value="medium" {% if report.priority == "medium" %}selected{% endif %}>Medium</option>
+                <option value="high" {% if report.priority == "high" %}selected{% endif %}>High</option>
+                <option value="critical" {% if report.priority == "critical" %}selected{% endif %}>Critical</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-danger">Update</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  

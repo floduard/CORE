@@ -20,6 +20,13 @@ class User(AbstractUser):
     managed_since = models.DateField(null=True, blank=True)
     id_number = models.CharField(max_length=20, blank=True)
 
+    def get_profile(self):
+        if self.role == 'citizen':
+            return getattr(self, 'citizenprofile', None)
+        elif self.role == 'officer':
+            return getattr(self, 'officerprofile', None)
+        elif self.role == 'admin':
+            return getattr(self, 'adminprofile', None)
 
 class Notification(models.Model):
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')

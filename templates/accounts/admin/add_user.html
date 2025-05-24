@@ -77,6 +77,10 @@
                   <label class="form-label">
                     {% if 'username' in field.name %}
                       <i class="bi bi-person-circle form-icon"></i>
+                    {% elif 'first_name' in field.name %}
+                      <i class="bi bi-person-circle form-icon"></i>
+                    {% elif 'last_name' in field.name %}
+                      <i class="bi bi-person-circle form-icon"></i>
                     {% elif 'email' in field.name %}
                       <i class="bi bi-envelope-at form-icon"></i>
                     {% elif 'password' in field.name %}
@@ -85,6 +89,8 @@
                       <i class="bi bi-people-fill form-icon"></i>
                     {% elif 'phone' in field.name %}
                       <i class="bi bi-telephone-fill form-icon"></i>
+                    {% elif 'profile_picture' in field.name %}
+                      <i class="bi bi-circle-fill form-icon"></i>
                     {% else %}
                       <i class="bi bi-pencil form-icon"></i>
                     {% endif %}

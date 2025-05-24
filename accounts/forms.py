@@ -60,13 +60,16 @@ class OfficerCreationForm(forms.ModelForm):
     
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'role']
+        fields = ['username', 'email', 'first_name', 'last_name','phone','gender','profile_picture', 'role']
+    widgets = {
+            'gender': forms.Select(attrs={'class': 'form-control'}),
+        }
 
     def save(self, commit=True):
-        user = super().save(commit=False)
+        User = super().save(commit=False)
         if commit:
-            user.save()
-        return user
+            User.save()
+        return User
 
 class CustomPasswordChangeForm(PasswordChangeForm):
     def __init__(self, *args, **kwargs):

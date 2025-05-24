@@ -115,22 +115,22 @@ def add_user(request):
     if request.method == 'POST':
         form = OfficerCreationForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
+            User = form.save(commit=False)
             temp_password = get_random_string(length=8)
-            user.password = make_password(temp_password)
-            user.is_active = False  # Require email verification
-            user.must_change_password = True  # Custom field for password change
-            user.save()
+            User.password = make_password(temp_password)
+            User.is_active = False  # Require email verification
+            User.must_change_password = True  # Custom field for password change
+            User.save()
 
             # Email verification link setup
             current_site = get_current_site(request)
             subject = 'Activate Your Cybercrime Reporting System Account'
-            DEFAULT_FROM_EMAIL='noreply@cybercrime-reporting-system.com'
+            DEFAULT_FROM_EMAIL='noreply@cras.com'
             message = render_to_string('accounts/admin/activation_email.html', {
-                'user': user,
+                'User': User,
                 'domain': current_site.domain,
-                'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-                'token': default_token_generator.make_token(user),
+                'uid': urlsafe_base64_encode(force_bytes(User.pk)),
+                'token': default_token_generator.make_token(User),
                 'temp_password': temp_password,
             })
 
@@ -138,7 +138,7 @@ def add_user(request):
                 subject,
                 message,
                 DEFAULT_FROM_EMAIL,
-                [user.email],
+                [User.email],
                 fail_silently=False,
             )
 
