@@ -165,7 +165,16 @@ def all_reports_view(request):
 @login_required
 def report_detail_view(request, pk):
     report = get_object_or_404(CybercrimeReport, pk=pk)
-    return render(request, 'reports/report_detail.html', {'report': report})
+    if request.user.role == 'admin':
+        activity_logs = ActivityLog.objects.filter(action__icontains=report.tracking_id)
+    else:
+        activity_logs = ActivityLog.objects.filter(user=request.user, action__icontains=report.tracking_id)
+    return render(request, 'reports/report_detail.html', {
+        'report': report,
+        'activity_logs': activity_logs,
+        # other context data
+    })
+    
 
 @user_passes_test(is_admin)
 def report_update_view(request, pk):
@@ -173,6 +182,10 @@ def report_update_view(request, pk):
     form = CybercrimeReportForm(request.POST or None, request.FILES or None, instance=report)
     if form.is_valid():
         form.save()
+        ActivityLog.objects.create(
+                    user=request.user,
+                    action=f"Case with {report.tracking_id} Tracking ID updated. "
+                )
         messages.success(request, "Report updated successfully.")
         return redirect('all_reports')
     return render(request, 'reports/report_form.html', {'form': form, 'title': 'Edit Report'})
@@ -181,6 +194,10 @@ def report_update_view(request, pk):
 def report_delete_view(request, pk):
     report = get_object_or_404(CybercrimeReport, pk=pk)
     report.delete()
+    ActivityLog.objects.create(
+                    user=request.user,
+                    action=f"Case with {report.tracking_id} Tracking ID deleted. "
+                )
     messages.success(request, "Report deleted.")
     return redirect('all_reports')
 
@@ -195,6 +212,10 @@ def delete_report(request, pk):
     report = get_object_or_404(CybercrimeReport, pk=pk, reported_by=request.user)
     if report.status.lower() == 'pending':
         report.delete()
+        ActivityLog.objects.create(
+                    user=request.user,
+                    action=f"Case with {report.tracking_id} Tracking ID deleted. "
+                )
         messages.success(request, "Report deleted successfully.")
     else:
         messages.warning(request, "Only pending reports can be deleted.")
@@ -217,6 +238,10 @@ def update_report_status(request, pk):
                     message=f"Your Case Status updated to {new_status}.",
                     url=reverse('report_detail', args=[report.pk])
                 )
+            ActivityLog.objects.create(
+                    user=request.user,
+                    action=f"Case with {report.tracking_id} Tracking ID status changed from '{report.status}' to '{new_status}'. "
+                )
             report.status = new_status
             report.save()
     return redirect('report_detail', pk=pk)
@@ -228,6 +253,15 @@ def send_additional_details(request, pk):
     if request.method == 'POST' and request.user.role in ['citizen']:
         report.more_details = request.POST.get('more_details')
         report.save()
+        ActivityLog.objects.create(
+                    user=request.user,
+                    action=f"Additional details submitted for case {report.tracking_id}. "
+                )
+        notify_user(
+                    recipient=request.user,
+                    message=f"Additional details submitted for case {report.tracking_id}.",
+                    url=reverse('report_detail', args=[report.pk])
+                )
     return redirect('report_detail', pk=pk)
 
 @login_required
@@ -241,6 +275,10 @@ def request_more_info(request, pk):
                     message=f"More info requested .",
                     url=reverse('report_detail', args=[report.pk])
                 )
+        ActivityLog.objects.create(
+                    user=request.user,
+                    action=f"Details requested for case {report.tracking_id}. "
+                )
     return redirect('report_detail', pk=pk)
 
 @login_required
@@ -253,6 +291,10 @@ def provide_recommendation(request, pk):
                     recipient=request.user,
                     message=f"Recomandations provided..",
                      url=reverse('report_detail', args=[report.pk])
+                )
+        ActivityLog.objects.create(
+                    user=request.user,
+                    action=f"Recomandations provided for case {report.tracking_id}. "
                 )
     return redirect('report_detail', pk=pk)
 
@@ -295,7 +337,6 @@ def update_report_status(request, pk):
         ActivityLog.objects.create(
             user=request.user,
             action=f"Report with {report.tracking_id} Tracking ID Status updated from '{old_status}' to '{new_status}'",
-            timestamp=now()
         )
 
         return redirect('report_detail', pk=pk)
@@ -315,7 +356,6 @@ def update_report_priority(request, pk):
         ActivityLog.objects.create(
             user=request.user,
             action=f"Report with {report.tracking_id} Tracking ID priority updated from '{old_priority}' to '{new_priority}'",
-            timestamp=now()
         )
 
         return redirect('report_detail', pk=pk)
@@ -338,12 +378,21 @@ def assign_case_to_officer(request, pk):
                     message=f"New Case Assigned: {case.tracking_id}.",
                      url=reverse('report_detail', args=[case.pk])
                 )
+                ActivityLog.objects.create(
+                    user=request.user,
+                    action=f"Report with {report.tracking_id} Tracking ID have been assigned to {new_officer} ,"
+                )
             else:
                 messages.success(request, f"New Case Assigned: {case.tracking_id}.")
                 notify_user(
                     recipient=new_officer,
                     message=f"New Case Assigned: {case.tracking_id}.",
                      url=reverse('report_detail', args=[report.pk])
+                )
+
+                ActivityLog.objects.create(
+                    user=request.user,
+                    action=f"Report with {report.tracking_id} Tracking ID have been assigned to {new_officer} ,"
                 )
             # Log history
             CaseAssignmentHistory.objects.create(
@@ -496,3 +545,13 @@ def report_logs(request, report_id):
         'report': report,
         'page_obj': page_obj,
     })
+
+@login_required
+def activity_logs_view(request):
+    user = request.user
+    if user.role == 'admin':  # Adjust depending on how you store roles
+        logs = ActivityLog.objects.all()
+    else:
+        logs = ActivityLog.objects.filter(user=user)
+    
+    return render(request, 'logs/activity_logs.html', {'logs': logs})

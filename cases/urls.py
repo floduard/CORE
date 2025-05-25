@@ -59,6 +59,7 @@ path('reports/<int:pk>/update-priority/', views.update_report_priority, name='up
 # logs
 # urls.py
 path('reports/<int:report_id>/logs/', views.report_logs, name='report_logs'),
+path('activity-logs/', views.activity_logs_view, name='activity_logs'),
 
 
 ]

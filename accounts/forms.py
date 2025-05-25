@@ -55,7 +55,11 @@ class CombinedUserProfileForm(forms.ModelForm):
                 self.fields['badge_id'].widget = forms.HiddenInput()
                 self.fields['department'].widget = forms.HiddenInput()
 
-
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError("Email is already registered.")
+        return email
 class OfficerCreationForm(forms.ModelForm):
     
     class Meta:
@@ -70,6 +74,11 @@ class OfficerCreationForm(forms.ModelForm):
         if commit:
             User.save()
         return User
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError("Email is already registered.")
+        return email
 
 class CustomPasswordChangeForm(PasswordChangeForm):
     def __init__(self, *args, **kwargs):

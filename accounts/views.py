@@ -41,6 +41,7 @@ from django.http import HttpResponse
 from reportlab.pdfgen import canvas
 from io import BytesIO
 from django.views.decorators.http import require_GET
+from django.utils import timezone
 
 
 def officer_required(view_func):
@@ -141,6 +142,10 @@ def add_user(request):
                 [User.email],
                 fail_silently=False,
             )
+            ActivityLog.objects.create(
+            user=request.user,
+            action=f"User {{request.user}} Added to the system",
+        )
 
             return redirect('manage_users')
     else:
@@ -172,6 +177,10 @@ def login_view(request):
                 return render(request, 'accounts/login.html')
             
             login(request, user)
+            ActivityLog.objects.create(
+                user=request.user,
+                action=f"User {user} Logged in",
+            )
             # Redirect based on role
             if user.role == 'admin':
                 return redirect('dashboard')  # admin dashboard
@@ -185,7 +194,12 @@ def login_view(request):
     return render(request, 'accounts/login.html')
 @login_required
 def logout_view(request):
-    logout(request)
+    if request.user.is_authenticated:
+        ActivityLog.objects.create(
+                user=request.user,
+                action=f"User {request.user}  Logged out",
+            )
+    logout(request)    
     messages.success(request, 'Logged out successfully.')
     return redirect('login')
 
@@ -298,6 +312,10 @@ def manage_users(request):
 def delete_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
     user.delete()
+    ActivityLog.objects.create(
+            user=request.user,
+            action=f"User {{user}} Deleted",
+        )
     messages.success(request, 'User deleted successfully.')
     return redirect('manage_users')
 
@@ -308,6 +326,10 @@ def toggle_user_status(request, user_id):
     user.is_active = not user.is_active
     user.save()
     status = 'enabled' if user.is_active else 'disabled'
+    ActivityLog.objects.create(
+            user=request.user,
+            action=f"User {user} is now {status}",
+        )
     messages.success(request, f'User {status} successfully.')
     return redirect('manage_users')
 
@@ -380,14 +402,45 @@ def generate_report(request):
         total_users = User.objects.count()
         total_citizens = User.objects.filter(role='citizen').count()
         total_officers = User.objects.filter(role='officer').count()
+        total_admins = User.objects.filter(role='admin').count()
         total_reports = CybercrimeReport.objects.count()
         recent_reports = CybercrimeReport.objects.filter(date__gte=last_month).count()
         older_period = CybercrimeReport.objects.filter(date__lt=last_month).count()
         assigned_reports = CybercrimeReport.objects.filter(assignee__isnull=False).count()
-        report_trend = (
-            f"{((recent_reports - older_period) / older_period) * 100:.2f}% {'increase' if recent_reports > older_period else 'decrease'}"
-            if older_period > 0 else "N/A"
-        )
+        summary_message = f"""
+                            📊 Report Summary:
+                            - Total Users: {total_users}
+                            - Citizens: {total_citizens}
+                            - Officers: {total_officers}
+                            - Admins: {total_admins}
+                            - Total Reports: {total_reports}
+                            - Last 30 Days: {recent_reports}
+                            - Assigned Cases: {assigned_reports}
+                    
+                            """
+
+
+        
+
+        recent_period_start = timezone.now() - timedelta(days=10)
+        older_period_start = timezone.now() - timedelta(days=30)
+
+        # Reports in the last 30 days
+        recent_reports = CybercrimeReport.objects.filter(date__gte=recent_period_start).count()
+
+        # Reports from 30-60 days ago
+        older_reports = CybercrimeReport.objects.filter(
+            date__gte=older_period_start,
+            date__lt=recent_period_start
+        ).count()
+
+        if older_reports > 0:
+            change = ((recent_reports - older_reports) / older_reports) * 100
+            direction = "increase" if change > 0 else "decrease"
+            report_trend = f"{abs(change):.2f}% {direction}"
+        else:
+            report_trend = "N/A"  # Not enough data to compare
+
 
         # CSV Export
         if format_type == 'csv':
@@ -414,6 +467,7 @@ def generate_report(request):
                 f"Total Users: {total_users}",
                 f"Citizens: {total_citizens}",
                 f"Officers: {total_officers}",
+                f"Officers: {total_admins}",
                 f"Total Reports: {total_reports}",
                 f"Recent Reports (30 days): {recent_reports}",
                 f"Trend: {report_trend}",
@@ -427,16 +481,21 @@ def generate_report(request):
             buffer.seek(0)
             return HttpResponse(buffer, content_type='application/pdf')
 
+           
+
+
         # HTML fallback
         context = {
             'title': f"Report Summary as on {today.strftime('%d %B, %Y')}",
             'total_users': total_users,
             'total_citizens': total_citizens,
             'total_officers': total_officers,
+            'total_officers': total_admins,
             'total_reports': total_reports,
             'recent_reports': recent_reports,
             'report_trend': report_trend,
             'assigned_reports': assigned_reports,
+            'summary_message' : summary_message.strip(),
         }
         return render(request, 'accounts/report_summary.html', context)
 
@@ -504,6 +563,10 @@ def edit_profile(request):
         
         if form.is_valid():
             form.save()
+            ActivityLog.objects.create(
+                    user=request.user,
+                    action=f"updated profile "
+                )
             messages.success(request, "Profile updated successfully.")
             return redirect('profile_view')
         

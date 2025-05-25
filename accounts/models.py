@@ -10,6 +10,7 @@ class User(AbstractUser):
     )
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
     phone = models.CharField(max_length=15, blank=True)
+    email = models.EmailField(unique=True) 
     address = models.TextField(blank=True)
     profile_picture = models.ImageField(upload_to='profiles/', null=True, blank=True)
     gender = models.CharField(max_length=10, choices=[('male', 'Male'), ('female', 'Female'), ('other', 'Other')], null=True)
@@ -27,6 +28,7 @@ class User(AbstractUser):
             return getattr(self, 'officerprofile', None)
         elif self.role == 'admin':
             return getattr(self, 'adminprofile', None)
+    
 
 class Notification(models.Model):
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')

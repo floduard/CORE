@@ -59,9 +59,13 @@
             <div class="mb-3">
               <label class="form-label">Select New Status</label>
               <select class="form-select" name="status" required>
-                <option value="in_review" {% if report.status == "in_review" %}selected{% endif %}>In Review</option>
-                <option value="investigating" {% if report.status == "investigating" %}selected{% endif %}>Investigating</option>
+                <option value="pending" {% if report.status == "pending" %}selected{% endif %}>Pending</option>
+                <option value="under_investigation" {% if report.status == "under_investigation" %}selected{% endif %}>Under Investigation</option>
+                <option value="postponed" {% if report.status == "postponed" %}selected{% endif %}>Postponed</option>
+                <option value="resolved" {% if report.status == "resolved" %}selected{% endif %}>Resolved</option>
+                <option value="rejected" {% if report.status == "rejected" %}selected{% endif %}>Rejected</option>
                 <option value="closed" {% if report.status == "closed" %}selected{% endif %}>Closed</option>
+                <option value="irrelevant" {% if report.status == "irrelevant" %}selected{% endif %}>Irrelevant</option>
               </select>
             </div>
           </div>

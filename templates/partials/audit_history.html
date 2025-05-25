@@ -1,30 +1,19 @@
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-danger text-white fw-bold">Audit History</div>
-    <div class="card-body">
-        {% if ActivityLog %}
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover table-sm align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            
-                            <th>User</th>
-                            <th>Action</th>
-                            <th>TimeStamp</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for log in ActivityLog %}
-                        <tr>
-                            <td>{{ log.user }}</td>
-                            <td class="text-uppercase small text-muted">{{ log.action }}</td>
-                            <td>{{ log.timestamp }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <p class="text-muted">No audit log entries available.</p>
-        {% endif %}
+<!-- history_tab.html -->
+<div class="card mt-4 shadow-sm">
+    <div class="card-header bg-secondary text-white fw-bold">
+        Activity History
     </div>
+    <ul class="list-group list-group-flush">
+        {% for activity in activity_logs %}
+            <li class="list-group-item">
+                <i class="bi bi-clock-history me-2 text-primary"></i>
+                <strong>{{ activity.user.get_full_name|default:activity.user.username }}</strong> 
+                <span class="text-muted">performed</span> 
+                "{{ activity.action }}"
+                <span class="text-muted float-end">{{ activity.timestamp|date:"Y-m-d H:i" }}</span>
+            </li>
+        {% empty %}
+            <li class="list-group-item text-muted">No activity history available.</li>
+        {% endfor %}
+    </ul>
 </div>

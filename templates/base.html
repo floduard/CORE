@@ -114,7 +114,7 @@
 
   <!-- Top Navbar -->
   <nav class="navbar navbar-dark bg-dark px-4 fixed-top">
-    <a class="navbar-brand d-flex align-items-center" href="#">
+    <a class="navbar-brand d-flex align-items-center" href="/">
       <img src="{% static 'images/cras.png' %}" alt="Logo" style="height: 30px; margin-right: 8px;">
       CRAS
     </a>
@@ -199,6 +199,11 @@
             <li>
               <a class="dropdown-item" href="{% url 'password_change' %}">
                 <i class="bi bi-key me-2"></i> Change Password
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'activity_logs' %}">
+                <i class="bi bi-file-earmark-text me-2"></i> Logs
               </a>
             </li>
             <li>
