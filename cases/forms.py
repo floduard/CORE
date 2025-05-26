@@ -80,3 +80,10 @@ class AssignCaseForm(forms.ModelForm):
         if case :
             self.fields['assignee'].queryset = User.objects.filter(role='officer')
             self.fields['assignee'].queryset = User.objects.filter(role='officer')
+
+
+class AdditionalEvidenceForm(forms.ModelForm):
+    class Meta:
+        model = AdditionalEvidence
+        fields = ['file']
+        

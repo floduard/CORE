@@ -41,7 +41,13 @@
         color: #e3342f;
         font-weight: bolder;
     }
+    .warning {
+        color: red;
+        display: none;
+        font-size: 0.9rem;
+    }
 </style>
+
 <div class="container mt-5 mb-5">
     <div class="card shadow-lg p-5">
         <div class="d-flex align-items-center mb-4">
@@ -66,15 +72,17 @@
                         Type of Cybercrime <span class="required-star">*</span>
                     </label>
                     {{ form.crime_type|add_class:"form-select" }}
+                    <p class="warning" id="crime_type_warning"></p>
                     <div class="text-danger small">{{ form.crime_type.errors }}</div>
                 </div>
 
-                <!-- Date and Time -->
+                <!-- Date of Incident -->
                 <div class="col-md-6">
                     <label for="{{ form.date.id_for_label }}" class="form-label">
                         Date of Incident <span class="required-star">*</span>
                     </label>
                     {{ form.date|add_class:"form-control"|attr:"type:date" }}
+                    <p class="warning" id="date_warning"></p>
                     <div class="text-danger small">{{ form.date.errors }}</div>
                 </div>
 
@@ -84,6 +92,7 @@
                         Country <span class="required-star">*</span>
                     </label>
                     {{ form.country|add_class:"form-control" }}
+                    <p class="warning" id="country_warning"></p>
                     <div class="text-danger small">{{ form.country.errors }}</div>
                 </div>
 
@@ -92,6 +101,7 @@
                         Province / City <span class="required-star">*</span>
                     </label>
                     {{ form.province_city|add_class:"form-control" }}
+                    <p class="warning" id="province_city_warning"></p>
                     <div class="text-danger small">{{ form.province_city.errors }}</div>
                 </div>
 
@@ -109,6 +119,7 @@
                         Incident Description <span class="required-star">*</span>
                     </label>
                     {{ form.description|add_class:"form-control"|attr:"rows:3" }}
+                    <p class="warning" id="description_warning"></p>
                     <div class="text-danger small">{{ form.description.errors }}</div>
                 </div>
 
@@ -118,6 +129,7 @@
                         Upload Evidence (Image, Video, Document)
                     </label>
                     {{ form.evidence|add_class:"form-control" }}
+                    <p class="warning" id="evidence_warning"></p>
                     <div class="text-danger small">{{ form.evidence.errors }}</div>
                 </div>
 
@@ -127,13 +139,7 @@
                         Suspects <span style="color:#ccc;">(Optional)</span>
                     </label>
                     {{ form.suspects|add_class:"form-control"|attr:"rows:3" }}
-                    <div class="text-danger small">{{ form.suspects.errors }}</div>
-                </div>
-                <div class="col-12">
-                    <label for="{{ form.additional_contacts.id_for_label }}" class="form-label">
-                        Additional Contacts <span style="color:#ccc;">(Optional)</span>
-                    </label>
-                    {{ form.suspects|add_class:"form-control"|attr:"rows:3" }}
+                    <p class="warning" id="suspects_warning"></p>
                     <div class="text-danger small">{{ form.suspects.errors }}</div>
                 </div>
 
@@ -146,4 +152,66 @@
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Cybercrime Type Validation
+    document.getElementById("id_crime_type").addEventListener("input", function() {
+        let warning = document.getElementById("crime_type_warning");
+        warning.textContent = "Please select a cybercrime type.";
+        warning.style.display = this.value ? "none" : "block";
+    });
+
+    // Incident Date Validation
+    document.getElementById("id_date").addEventListener("input", function() {
+        let inputDate = new Date(this.value);
+        let today = new Date();
+        let warning = document.getElementById("date_warning");
+        warning.textContent = "Incident date cannot be in the future.";
+        warning.style.display = inputDate > today ? "block" : "none";
+    });
+
+    // Country Validation
+    document.getElementById("id_country").addEventListener("input", function() {
+        let warning = document.getElementById("country_warning");
+        warning.textContent = "Country is required.";
+        warning.style.display = this.value ? "none" : "block";
+    });
+
+    // Province/City Validation
+    document.getElementById("id_province_city").addEventListener("input", function() {
+        let warning = document.getElementById("province_city_warning");
+        warning.textContent = "Province or city is required.";
+        warning.style.display = this.value ? "none" : "block";
+    });
+
+    // Description Validation
+    document.getElementById("id_description").addEventListener("input", function() {
+        let warning = document.getElementById("description_warning");
+        warning.textContent = "Description must be at least 15 characters.";
+        warning.style.display = this.value.length >= 15 ? "none" : "block";
+    });
+});
+
+document.addEventListener("DOMContentLoaded", function() {
+    document.getElementById("id_evidence").addEventListener("change", function() {
+        let warning = document.getElementById("evidence_warning");
+        let file = this.files[0];  // Get selected file
+
+        if (file) {
+            let allowedExtensions = ["jpg", "jpeg", "png", "mp4", "pdf"];
+            let fileExtension = file.name.split('.').pop().toLowerCase();  // Extract file extension
+
+            if (!allowedExtensions.includes(fileExtension)) {
+                warning.textContent = "Invalid file type. Please upload an image, video, or pdf document.";
+                warning.style.display = "block";
+                this.value = "";  // Clear invalid selection
+            } else {
+                warning.style.display = "none";
+            }
+        }
+    });
+});
+</script>
+
 {% endblock %}

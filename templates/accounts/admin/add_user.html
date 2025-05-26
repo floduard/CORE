@@ -47,12 +47,10 @@
     background: #08b5d1;
     color: #fff;
   }
-  .city-footer-img {
-    width: 100%;
-    max-height: 60px;
-    object-fit: cover;
-    opacity: 0.25;
-    margin-top: 24px;
+  .warning {
+    color: red;
+    display: none;
+    font-size: 0.9rem;
   }
 </style>
 
@@ -67,7 +65,7 @@
               <i class="bi bi-person-plus cyber-icon"></i>
               <h2 class="card-title mb-0" style="color:#198754; display:inline-block;">Add User</h2>
               <div class="text-info fw-semibold mt-1">
-                <i class="bi bi-shield-check"></i> Securely add a new user to the  system
+                <i class="bi bi-shield-check"></i> Securely add a new user to the system
               </div>
             </div>
             <form method="post" novalidate>
@@ -97,6 +95,7 @@
                     {{ field.label }}
                   </label>
                   {{ field }}
+                  <p class="warning" id="{{ field.name }}_warning"></p>
                   {% if field.errors %}
                     <div class="text-danger small">{{ field.errors|striptags }}</div>
                   {% endif %}
@@ -121,4 +120,46 @@
     </div>
   </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // First Name Validation (Only Letters)
+    document.getElementById("id_first_name").addEventListener("input", function() {
+        let warning = document.getElementById("first_name_warning");
+        warning.textContent = "First name should only contain letters.";
+        warning.style.display = /^[A-Za-z]+$/.test(this.value) ? "none" : "block";
+    });
+
+    // Last Name Validation (Only Letters)
+    document.getElementById("id_last_name").addEventListener("input", function() {
+        let warning = document.getElementById("last_name_warning");
+        warning.textContent = "Last name should only contain letters.";
+        warning.style.display = /^[A-Za-z]+$/.test(this.value) ? "none" : "block";
+    });
+
+    // Phone Number Validation (Must Start with 07 and Be 10 Digits)
+    document.getElementById("id_phone").addEventListener("input", function() {
+        let warning = document.getElementById("phone_warning");
+        warning.textContent = "Phone number must start with '07' and be 10 digits.";
+        warning.style.display = /^07\d{8}$/.test(this.value) ? "none" : "block";
+    });
+
+    // Birth Date Validation (Cannot Be in the Future)
+    document.getElementById("id_birth_date").addEventListener("input", function() {
+        let inputDate = new Date(this.value);
+        let today = new Date();
+        let warning = document.getElementById("birth_date_warning");
+        warning.textContent = "Birth date cannot be in the future.";
+        warning.style.display = inputDate > today ? "block" : "none";
+    });
+
+    // ID Number Validation (Must Be Exactly 16 Digits)
+    document.getElementById("id_id_number").addEventListener("input", function() {
+        let warning = document.getElementById("id_warning");
+        warning.textContent = "ID number must be exactly 16 digits.";
+        warning.style.display = /^\d{16}$/.test(this.value) ? "none" : "block";
+    });
+});
+</script>
+
 {% endblock %}

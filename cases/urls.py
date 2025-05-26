@@ -37,6 +37,9 @@ urlpatterns = [
     path('reports/<int:pk>/request-more-info/', views.request_more_info, name='request_more_info'),
     path('reports/<int:pk>/provide-recommendation/', views.provide_recommendation, name='provide_recommendation'),
     path('report/<int:pk>/update-status-priority/', views.update_status_priority, name='update_status_priority'),
+    path('reports/<int:report_id>/upload-additional-evidence/', views.upload_additional_evidence, name='upload_additional_evidence'),
+    path('evidence/delete/<int:evidence_id>/', views.delete_additional_evidence, name='delete_additional_evidence'),
+
 
 
     #Links
@@ -52,14 +55,14 @@ urlpatterns = [
     path('cases/critical/', views.critical_cases, name='critical_cases'),
 
     
-# update status
-path('reports/<int:pk>/update-status/', views.update_report_status, name='update_report_status'),
-path('reports/<int:pk>/update-priority/', views.update_report_priority, name='update_report_priority'),
+    # update status
+    path('reports/<int:pk>/update-status/', views.update_report_status, name='update_report_status'),
+    path('reports/<int:pk>/update-priority/', views.update_report_priority, name='update_report_priority'),
 
-# logs
-# urls.py
-path('reports/<int:report_id>/logs/', views.report_logs, name='report_logs'),
-path('activity-logs/', views.activity_logs_view, name='activity_logs'),
+    # logs
+    # urls.py
+    path('reports/<int:report_id>/logs/', views.report_logs, name='report_logs'),
+    path('activity-logs/', views.activity_logs_view, name='activity_logs'),
 
 
 ]

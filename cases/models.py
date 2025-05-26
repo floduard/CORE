@@ -76,3 +76,10 @@ class CaseAssignmentHistory(models.Model):
 
     def __str__(self):
         return f"{self.case.tracking_id} → {self.assigned_to} on {self.timestamp:%Y-%m-%d %H:%M}"
+
+
+class AdditionalEvidence(models.Model):
+    report = models.ForeignKey(CybercrimeReport, on_delete=models.CASCADE, related_name='additional_evidences')
+    file = models.FileField(upload_to='evidence/additional/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)  # optional

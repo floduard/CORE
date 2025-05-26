@@ -1,15 +1,99 @@
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-dark text-white fw-bold">Evidence</div>
-    <div class="card-body">
-        {% if report.evidence %}
-            <ul class="list-group">
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <i class="bi bi-paperclip me-2"></i> {{ report.evidence }}
-                    <a href="{{ report.evidence.url }}" class="btn btn-sm btn-outline-primary" target="_blank">View</a>
-                </li>
-            </ul>
-        {% else %}
-            <p class="text-muted">No evidence file uploaded.</p>
-        {% endif %}
+<div class="row">
+    <!-- Initial Evidence -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-dark text-white fw-bold">
+                <i class="bi bi-archive"></i> Initial Evidence
+            </div>
+            <div class="card-body">
+                {% if report.evidence %}
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-paperclip me-2"></i> 
+                                {{ report.evidence.name|truncatechars:30 }}
+                            </div>
+                            <a href="{{ report.evidence.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                View
+                            </a>
+                        </li>
+                    </ul>
+                {% else %}
+                    <p class="text-muted">No primary evidence submitted.</p>
+                {% endif %}
+            </div>
+        </div>
     </div>
+
+    <!-- Additional Evidences -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-secondary text-white fw-bold">
+                <i class="bi bi-folder2-open"></i> Additional Evidences
+            </div>
+            <div class="card-body">
+                {% if report.additional_evidences.all %}
+                    <ul class="list-group">
+                        {% for item in report.additional_evidences.all %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-file-earmark-text me-2"></i> 
+                                    {{ item.file.name|truncatechars:30 }} 
+                                    <small class="text-muted d-block">Uploaded: {{ item.uploaded_at|date:"Y-m-d H:i" }}</small>
+                                </div>
+                                <a href="{{ item.file.url }}" target="_blank" class="btn btn-sm btn-outline-success">
+                                    View
+
+                                </a>
+                                {% if user.role == 'admin' %}
+                                <form method="post" action="{% url 'delete_additional_evidence' item.id %}" style="display:inline;">
+                                  {% csrf_token %}
+                                  <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this evidence?');">
+                                    <i class="bi bi-trash"></i>
+                                  </button>
+                                </form>
+                              {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted">No additional evidence uploaded.</p>
+                {% endif %}
+            </div>
+            <div class="card-footer text-end">
+                <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#uploadEvidenceModal">
+                    <i class="bi bi-upload"></i> Upload More Evidence
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Uploading Additional Evidence -->
+<div class="modal fade" id="uploadEvidenceModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <form method="post" enctype="multipart/form-data" action="{% url 'upload_additional_evidence' report.id %}">
+      {% csrf_token %}
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Upload Additional Evidence</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            {{ form.file.label_tag }}
+            {{ form.file }}
+            {% if form.file.errors %}
+                <div class="text-danger">{{ form.file.errors }}</div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-upload"></i> Upload
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
 </div>

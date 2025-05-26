@@ -584,3 +584,36 @@ def activity_logs_view(request):
         logs = ActivityLog.objects.filter(user=user)
     
     return render(request, 'logs/activity_logs.html', {'logs': logs})
+
+@login_required
+def upload_additional_evidence(request, report_id):
+    report = get_object_or_404(CybercrimeReport, id=report_id)
+
+    if request.method == 'POST':
+        form = AdditionalEvidenceForm(request.POST, request.FILES)
+        if form.is_valid():
+            evidence = form.save(commit=False)
+            evidence.report = report
+            evidence.uploaded_by = request.user
+            evidence.save()
+            messages.success(request, "Evidence uploaded successfully.")
+            return redirect('report_detail',report_id)
+    else:
+        form = AdditionalEvidenceForm()
+
+    return render(request, 'partials/upload_additional_evidence.html', {'form': form, 'report': report})
+
+
+@login_required
+@user_passes_test(is_admin)
+def delete_additional_evidence(request, evidence_id):
+    evidence = get_object_or_404(AdditionalEvidence, id=evidence_id)
+    report_id = evidence.report.id
+
+    # Delete the file from storage
+    evidence.file.delete(save=False)
+
+    # Delete the DB entry
+    evidence.delete()
+    messages.success(request, "Additional evidence deleted successfully.")
+    return redirect('report_detail', report_id)

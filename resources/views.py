@@ -99,17 +99,26 @@ def feedback_list(request):
 @user_passes_test(lambda u: u.role == 'admin')
 def reply_feedback(request, pk):
     feedback = get_object_or_404(Feedback, pk=pk)
+
     if request.method == 'POST':
-        form = AdminReplyForm(request.POST, instance=feedback)
+        form = AdminReplyForm(request.POST)
         if form.is_valid():
-            reply = form.save(commit=False)
-            reply.replied_at = timezone.now()
-            reply.save()
-            # Optionally: Notify user here
+            new_reply = form.cleaned_data['admin_reply']  # Get new reply
+
+            # Append new reply while preserving previous replies
+            if feedback.admin_reply:
+                feedback.admin_reply += "\n\n" + f"{new_reply}"
+            else:
+                feedback.admin_reply = f"{new_reply}"  # First reply
+
+            feedback.replied_at = timezone.now()
+            feedback.save()
             return redirect('feedback_list')
     else:
         form = AdminReplyForm(instance=feedback)
+
     return render(request, 'feedback/reply_feedback.html', {'form': form, 'feedback': feedback})
+
 
 @user_passes_test(lambda u: u.role == 'admin')
 def delete_feedback(request, pk):

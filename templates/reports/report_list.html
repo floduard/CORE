@@ -12,6 +12,7 @@
                     <th>Priority</th>
                     <th>Date of Incident</th>
                     <th> Submitted At </th>
+                    <th> Submoted By </th>
                     <th>View</th>
                 </tr>
             </thead>
@@ -24,6 +25,7 @@
                     <td>{{ report.get_priority_display }}</td>
                     <td>{{ report.date }}</td>
                     <td>{{ report.submitted_at }}</td>
+                    <td>{{ report.user |default:'Unknown' }}</td>
                     <td>
                         <a href="{% url 'report_detail' report.pk %}" class="btn btn-sm btn-primary">Details</a>
                     </td>

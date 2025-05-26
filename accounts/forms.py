@@ -6,6 +6,7 @@ from phonenumber_field.formfields import PhoneNumberField as PhoneNumberFormFiel
 from phonenumber_field.widgets import PhoneNumberPrefixWidget
 from django.core.validators import RegexValidator
 from django.forms import TextInput
+from datetime import date
 
 class CitizenRegisterForm(UserCreationForm):    
     
@@ -28,6 +29,11 @@ class CitizenRegisterForm(UserCreationForm):
         if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("Email is already registered.")
         return email
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if not username.isalpha():
+            raise forms.ValidationError("Username should only contain letters.")
+        return username
     
     
 
@@ -50,6 +56,24 @@ class CombinedUserProfileForm(forms.ModelForm):
             'id_number': forms.TextInput(attrs={'inputmode': 'numeric', 'pattern': '[1-9][0-9]{15}'}),
             
         }
+
+    def clean_birth_date(self):
+        birth_date = self.cleaned_data.get('birth_date')
+        if birth_date > date.today():
+            raise forms.ValidationError("Birth date cannot be in the future.")
+        return birth_date
+
+    def clean_first_name(self):
+        first_name = self.cleaned_data.get('first_name')
+        if not first_name.isalpha():
+            raise forms.ValidationError("First name should only contain letters.")
+        return first_name
+
+    def clean_last_name(self):
+        last_name = self.cleaned_data.get('last_name')
+        if not last_name.isalpha():
+            raise forms.ValidationError("Last name should only contain letters.")
+        return last_name
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
@@ -96,7 +120,24 @@ class OfficerCreationForm(forms.ModelForm):
         if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("Email is already registered.")
         return email
-    
+
+    def clean_first_name(self):
+        first_name = self.cleaned_data.get('first_name')
+        if not first_name.isalpha():
+            raise forms.ValidationError("First name should only contain letters.")
+        return first_name
+
+    def clean_last_name(self):
+        last_name = self.cleaned_data.get('last_name')
+        if not last_name.isalpha():
+            raise forms.ValidationError("Last name should only contain letters.")
+        return last_name
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if not username.isalpha():
+            raise forms.ValidationError("Username should only contain letters.")
+        return username
     
 
 class CustomPasswordChangeForm(PasswordChangeForm):
