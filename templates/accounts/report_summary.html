@@ -44,7 +44,7 @@
       <div class="col">
         <div class="card border-secondary shadow-sm h-100">
           <div class="card-body">
-            <h5 class="card-title">🕒 Last 30 Days Cases</h5>
+            <h5 class="card-title">🕒 Recent Cases</h5>
             <p class="card-text display-6 fw-semibold text-secondary">{{ recent_reports }}</p>
           </div>
         </div>
@@ -56,13 +56,6 @@
             <p class="card-text display-6 fw-semibold text-danger">{{ assigned_reports }}</p>
           </div>
         </div>
-      </div>
-    </div>
-
-    <div class="card mt-4 shadow">
-      <div class="card-body">
-        <h5 class="card-title">📈 Reporting Trend</h5>
-        <p class="card-text fs-5">{{ report_trend }}</p>
       </div>
     </div>
 
@@ -88,13 +81,13 @@
 
     <div class="card shadow mb-4">
       <div class="card-body">
-        <h5 class="card-title mb-3">📋 Recent Activity (Last 30 Days)</h5>
+        <h5 class="card-title mb-3">📋 Recent Cases Status </h5>
         <table class="table table-hover">
           <thead class="table-light">
             <tr>
               <th>Tracking ID</th>
               <th>Status</th>
-              <th>Updated At</th>
+              <th>Last Updated</th>
             </tr>
           </thead>
           <tbody>

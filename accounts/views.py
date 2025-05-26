@@ -77,21 +77,21 @@ def citizen_register(request):
 @login_required
 def dashboard(request):
     if request.user.role == 'admin':
-        recent_activities = ActivityLog.objects.all()[:10]
+        activity_logs = ActivityLog.objects.all().order_by('-timestamp')[:10]
         return render(request, 'accounts/dashboards/admin_dashboard.html', {
-            'recent_activities': recent_activities
+            'activity_logs': activity_logs
         })
 
     elif request.user.role == 'officer':
-        recent_activities = ActivityLog.objects.filter(user=request.user)[:10]
+        activity_logs = ActivityLog.objects.filter(user=request.user)[:10]
         return render(request, 'accounts/dashboards/officer_dashboard.html', {
-            'recent_activities': recent_activities
+            'activity_logs': activity_logs
         })
 
     elif request.user.role == 'citizen':
-        recent_activities = ActivityLog.objects.filter(user=request.user)[:10]
+        activity_logs = ActivityLog.objects.filter(user=request.user)[:10]
         return render(request, 'accounts/dashboards/citizen_dashboard.html', {
-            'recent_activities': recent_activities
+            'activity_logs':activity_logs
         })
 
 def activate_account(request, uid, token):
@@ -216,6 +216,8 @@ def role_based_dashboard(request):
     else:
         reports = CybercrimeReport.objects.filter(user=user)
 
+       
+
     total_reports = reports.count()
     report_link = reverse("all_reports") if user.role in ['admin', 'officer'] else reverse("my_reports")
     recent_reports = reports.filter(submitted_at__gte=now() - timedelta(days=7)).count()
@@ -279,6 +281,15 @@ def role_based_dashboard(request):
         {"title": "High Rated Zone", "value": top_zone_name, "link": reverse("top_zones")},
     ]
 
+    if request.user.role == 'admin':
+            recent_activities = ActivityLog.objects.all().order_by('-timestamp')[:5]           
+
+    elif request.user.role == 'officer':
+            recent_activities = ActivityLog.objects.filter(user=request.user)[:5]           
+
+    elif request.user.role == 'citizen':
+            recent_activities = ActivityLog.objects.filter(user=request.user)[:5]
+
     context = {
         'stats': stats,
         'chart_labels': months,
@@ -287,6 +298,7 @@ def role_based_dashboard(request):
         'status_data': status_counts,
         'priority_labels': priority_labels,
         'priority_data': priority_counts,
+        'recent_activities':recent_activities,
     }
 
     if user.role == 'admin':
@@ -314,7 +326,7 @@ def delete_user(request, user_id):
     user.delete()
     ActivityLog.objects.create(
             user=request.user,
-            action=f"User {{user}} Deleted",
+            action=f"User {user} Deleted",
         )
     messages.success(request, 'User deleted successfully.')
     return redirect('manage_users')
@@ -551,12 +563,37 @@ def generate_report(request):
 
 @login_required
 def profile_view(request):
-    return render(request, 'accounts/profiles/profile_view.html')
+    if request.user.role == "citizen":
+        skip_fields = ["badge_id", "department", "office_name", "managed_since"]
+    elif request.user.role == "officer":
+        skip_fields = ["id_number", "office_name", "managed_since"]
+    elif request.user.role == "admin":
+        skip_fields = ["id_number", "badge_id", "department"]
+    else:
+        skip_fields = []
+
+    # Create a context dictionary
+    context = {
+        'skip_fields': skip_fields,
+        # Add any other context variables you need here
+    }
+
+    return render(request, 'accounts/profiles/profile_view.html', context)
 
 
 @login_required
 def edit_profile(request):
     user = request.user
+    # Calculate skip_fields based on role
+    if user.role == "citizen":
+        skip_fields = ["badge_id", "department", "office_name", "managed_since"]
+    elif user.role == "officer":
+        skip_fields = ["id_number", "office_name", "managed_since"]
+    elif user.role == "admin":
+        skip_fields = ["id_number", "badge_id", "department"]
+    else:
+        skip_fields = []
+
     if request.method == 'POST':
         form = CombinedUserProfileForm(request.POST, request.FILES, instance=user, user=user)
         password_form = PasswordChangeForm(user=user, data=request.POST)
@@ -564,9 +601,9 @@ def edit_profile(request):
         if form.is_valid():
             form.save()
             ActivityLog.objects.create(
-                    user=request.user,
-                    action=f"updated profile "
-                )
+                user=request.user,
+                action="updated profile "
+            )
             messages.success(request, "Profile updated successfully.")
             return redirect('profile_view')
         
@@ -582,4 +619,38 @@ def edit_profile(request):
     return render(request, 'accounts/profiles/profile.html', {
         'form': form,
         'password_form': password_form,
+        'skip_fields': skip_fields,  # Pass skip_fields to the template
     })
+
+
+@user_passes_test(is_admin)
+def admin_update_user_view(request, user_id):
+    target_user = get_object_or_404(User, id=user_id)
+
+    # Determine skip_fields based on the target user's role
+    if target_user.role == "citizen":
+        skip_fields = ["badge_id", "department", "office_name", "managed_since"]
+    elif target_user.role == "officer":
+        skip_fields = ["id_number", "birth_date", "office_name", "managed_since"]
+    elif target_user.role == "admin":
+        skip_fields = ["id_number", "birth_date", "badge_id", "department"]
+    else:
+        skip_fields = []
+
+    if request.method == 'POST':
+        form = CombinedUserProfileForm(request.POST, instance=target_user)
+        if form.is_valid():
+            form.save()
+            return redirect('manage_users')
+    else:
+        form = CombinedUserProfileForm(instance=target_user)
+
+    return render(
+        request,
+        'accounts/profiles/profile.html',
+        {
+            'form': form,
+            'target_user': target_user,
+            'skip_fields': skip_fields,  # Pass skip_fields to template
+        }
+    )

@@ -88,17 +88,8 @@
                       <i class="bi bi-info-circle me-2 text-primary"></i>Profile Details
                     </h6>
                     <dl class="row mb-0">
-                      {# Field skipping logic based on user role, as in edit_profile #}
                       {% for field in form %}
-                        {% if user.role == "citizen" and field.name in "badge_id,department,office_name,managed_since" %}
-                          {# skip #}
-                        {% elif user.role == "officer" and field.name in "id_number,birth_date,office_name,managed_since" %}
-                          {# skip #}
-                        {% elif user.role == "admin" and field.name in "id_number,birth_date,badge_id,department" %}
-                          {# skip #}
-                        {% elif field.name == "profile_picture" %}
-                          {# skip profile_picture in main info #}
-                        {% else %}
+                        {% if field.name not in skip_fields and field.name != "profile_picture" %}
                           <dt class="col-sm-4 text-muted d-flex align-items-center">
                             {% if field.name == "email" %}
                               <i class="bi bi-envelope-fill text-primary me-2"></i>
@@ -164,7 +155,7 @@
                 </div>
                 <!-- Other Fields -->
                 {% for field in form %}
-                  {% if field.name != 'profile_picture' %}
+                  {% if field.name not in skip_fields and field.name != 'profile_picture' %}
                     <div class="col-md-6">
                       <label class="form-label fw-semibold">{{ field.label }}</label>
                       {{ field|add_class:"form-control" }}

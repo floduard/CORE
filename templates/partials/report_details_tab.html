@@ -8,11 +8,13 @@
             <tr><th>Status</th><td>{{ report.status }}</td></tr>
             <tr><th>Type</th><td>{{ report.crime_type }}</td></tr>
             <tr><th>Description</th><td>{{ report.description|linebreaks }}</td></tr>
-            <tr><th>Date of Incident</th><td>{{ report.submitted_at }}</td></tr>
-            <tr><th>Submitted At</th><td>{{ report.date }}</td></tr>
+            <tr><th>Date of Incident</th><td>{{ report.date }}</td></tr>
+            <tr><th>Submitted At</th><td>{{ report.submitted_at}}</td></tr>
             <tr><th>Country</th><td>{{ report.country }}</td></tr>
             <tr><th>Provice/City</th><td>{{ report.province_city|default:"N/A" }}</td></tr>
-            <tr><th>Submitted By</th><td>{{ report.user.first_name}} {{ report.user.last_name}} : {{ report.user.username}}</td>
+            <tr><th>Submitted By</th><td> {{ report.user.username | default:"Unkown" }}
+            <tr><th>Assigned To</th><td>{{ report.assignee | default:"N/A" }}</td></tr>
+            <tr><th>Updated At</th><td>{{ report.updated_at }}</td></tr>
             <tr><th>Address</th><td>{{ report.address|default:"N/A" }}</td></tr>
            
         </table>

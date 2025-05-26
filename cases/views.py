@@ -15,6 +15,10 @@ from django.urls import reverse
 from accounts.utils import notify_user
 from django.utils.timezone import now
 from datetime import timedelta
+from django.db.models import F
+from django.db.models.functions import Concat
+from django.db.models import Value
+
 
 def available_cybercrimes(request):
     cybercrimes = CybercrimeType.objects.all()
@@ -129,7 +133,7 @@ def all_reports_view(request):
     status_filter = request.GET.get('status')
     crime_type_filter = request.GET.get('crime_type')
 
-    reports = CybercrimeReport.objects.all()
+    reports = CybercrimeReport.objects.all().order_by('id')
 
     if query:
         reports = reports.filter(
@@ -250,46 +254,71 @@ def update_report_status(request, pk):
 @login_required
 def send_additional_details(request, pk):
     report = get_object_or_404(CybercrimeReport, pk=pk)
+    if report.assignee:  # Ensure assignee is not None
+         user_instance = User.objects.get(id=report.assignee.pk)
+    else:
+         user_instance = None  # Or handle it appropriately
+
     if request.method == 'POST' and request.user.role in ['citizen']:
-        report.more_details = request.POST.get('more_details')
+        
+        new_details= request.POST.get('more_details', "")
+        report.more_details = Concat(F('more_details'), Value("\n"), Value(new_details))
         report.save()
+
         ActivityLog.objects.create(
-                    user=request.user,
-                    action=f"Additional details submitted for case {report.tracking_id}. "
+                    user= request.user,
+                    action=f"Additional details submitted for case {report.tracking_id} as {new_details}. "
                 )
         notify_user(
-                    recipient=request.user,
-                    message=f"Additional details submitted for case {report.tracking_id}.",
+                    recipient=user_instance,
+                    message=f"Additional details submitted for case {report.tracking_id} as {new_details}.",
                     url=reverse('report_detail', args=[report.pk])
                 )
     return redirect('report_detail', pk=pk)
+
 
 @login_required
 def request_more_info(request, pk):
-    report = get_object_or_404(CybercrimeReport, pk=pk)
-    if request.method == 'POST' and request.user.role in ['admin', 'officer']:
-        report.request_more_info  = request.POST.get('request_more_info')
-        report.save()
-        notify_user(
-                    recipient=request.user,
-                    message=f"More info requested .",
-                    url=reverse('report_detail', args=[report.pk])
-                )
-        ActivityLog.objects.create(
-                    user=request.user,
-                    action=f"Details requested for case {report.tracking_id}. "
-                )
-    return redirect('report_detail', pk=pk)
+        report = get_object_or_404(CybercrimeReport, pk=pk)
+        if report.assignee:  # Ensure assignee is not None
+            user_instance = User.objects.get(id=report.assignee.pk)
+        else:
+            user_instance = None  # Or handle it appropriately
+        
+        if request.method == 'POST' and request.user.role in ['admin', 'officer']:
+            request_more_info_data= request.POST.get('request_more_info', "")
+            report.request_more_info = Concat(F('request_more_info'), Value("\n"), Value(request_more_info_data))
+            report.save()
+            messages.success(request, "More info requested.")
+            notify_user(
+                recipient=user_instance ,
+                message=f"More info requested for case {report.tracking_id} as {request_more_info_data}",
+                url=reverse('report_detail', args=[report.pk])
+            )
 
+            ActivityLog.objects.create(
+                user=request.user,
+                action=f"Details requested for case {report.tracking_id}."
+            )
+            return redirect('report_detail', pk=pk)
+        return redirect('report_detail', pk=pk)  # Redirect if not POST
+    
 @login_required
 def provide_recommendation(request, pk):
     report = get_object_or_404(CybercrimeReport, pk=pk)
+    if report.assignee:  # Ensure assignee is not None
+            user_instance = User.objects.get(id=report.assignee.pk)
+    else:
+            user_instance = None  # Or handle it appropriately
+   
     if request.method == 'POST' and request.user.role in ['admin', 'officer']:
-        report.recommendations = request.POST.get('recommendations')
+        new_recommendation= request.POST.get('recommendations', "")
+        report.recommendations = Concat(F('recommendations'), Value("\n"), Value(new_recommendation))
         report.save()
+        messages.success(request, "Recomandations provided.")
         notify_user(
-                    recipient=request.user,
-                    message=f"Recomandations provided..",
+                    recipient= user_instance,
+                    message=f"Recomandations provided.. as {new_recommendation}.",
                      url=reverse('report_detail', args=[report.pk])
                 )
         ActivityLog.objects.create(
@@ -380,14 +409,14 @@ def assign_case_to_officer(request, pk):
                 )
                 ActivityLog.objects.create(
                     user=request.user,
-                    action=f"Report with {report.tracking_id} Tracking ID have been assigned to {new_officer} ,"
+                    action=f"Report with {case.tracking_id} Tracking ID have been assigned to {new_officer} ,"
                 )
             else:
                 messages.success(request, f"New Case Assigned: {case.tracking_id}.")
                 notify_user(
                     recipient=new_officer,
                     message=f"New Case Assigned: {case.tracking_id}.",
-                     url=reverse('report_detail', args=[report.pk])
+                     url=reverse('report_detail', args=[case.pk])
                 )
 
                 ActivityLog.objects.create(

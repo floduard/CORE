@@ -16,7 +16,7 @@
         
 
         {% if user.role == 'citizen' and report.status != 'closed' %}
-            <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#additionalDetailsModal">
+            <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#additionalDetailsModal" {% if report.status == 'closed' or report.status == 'resolved' %}disabled="disabled"{% endif %}>
                 <i class="bi bi-plus-circle"></i> Add More Details
             </button>
         {% endif %}

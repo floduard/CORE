@@ -33,7 +33,8 @@ INSTALLED_APPS = [
     'widget_tweaks',
     'crispy_forms',
     'sorl.thumbnail',
-   
+    'phonenumber_field',
+    
 ]
 
 MIDDLEWARE = [
@@ -140,6 +141,11 @@ EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS')
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
+
+
+# RECAPTCHA_PUBLIC_KEY = env('PUBLIC_KEY')
+# RECAPTCHA_PRIVATE_KEY = env('PRIVATE_KEY')
+# RECAPTCHA_REQUIRED_SCORE = 0.85  # only for reCAPTCHA v3
 
 
 

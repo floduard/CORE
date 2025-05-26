@@ -79,10 +79,10 @@
     Recent Activities
   </div>
   <ul class="list-group list-group-flush">
-    {% for activity in recent_activities %}
+    {% for recent_activity in recent_activities %}
       <li class="list-group-item">
-        <strong>{{ activity.user }}</strong>: {{ activity.action }} 
-        <span class="text-muted float-end">{{ activity.timestamp|date:"Y-m-d H:i" }}</span>
+        <strong>{{ recent_activity.user }}</strong>: {{ recent_activity.action }} 
+        <span class="text-muted float-end">{{ recent_activity.timestamp|date:"Y-m-d H:i" }}</span>
       </li>
     {% empty %}
       <li class="list-group-item text-muted">No recent activity found.</li>

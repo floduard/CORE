@@ -15,33 +15,44 @@
                 <strong>Requested Info:</strong><br> {{ report.request_more_info|linebreaks }}
             </div>
         
-
-        {% if user.role == 'officer' and report.status == 'closed' %}
+        
+            {% if user.role == 'officer' %}
             <div class="mt-4 d-flex gap-2">
-                <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#recommendationModal">
-                    <i class="bi bi-lightbulb"></i> Recommend Action
+                <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#recommendationModal" {% if report.status == 'closed' or report.status == 'resolved' %}disabled="disabled"{% endif %}>
+                    <i class="bi bi-lightbulb"></i> Recommendations
                 </button>   
             </div>         
+            {% endif %}
+              
+        {% if user.role == 'officer' or user.role == 'admin'  %}
+            <button 
+                id="requestInfoBtn"
+                class="btn btn-outline-warning" 
+                data-bs-toggle="modal" 
+                data-bs-target="#requestMoreInfoModal"
+                {% if report.status == 'closed' or report.status == 'resolved' %}disabled{% endif %}>
+                <i class="bi bi-question-circle"></i> Request More Info
+            </button>    
         {% endif %}
+          {% if user.role == 'officer' %}
+              <button class="btn btn-outline-primary mt-3" 
+                      data-bs-toggle="modal" 
+                      data-bs-target="#updateStatusModal">
+                    
+                  <i class="bi bi-pencil-square"></i> Update Status
+              </button>
+          {% endif %}
+          {% if user.role == 'admin' %}
+              <button class="btn btn-outline-danger mt-3" 
+                      data-bs-toggle="modal" 
+                      data-bs-target="#updatePriorityModal"
+                      {% if report.status == 'closed' or report.status == 'resolved' %}disabled{% endif %}>
+                  <i class="bi bi-exclamation-circle"></i> Change Priority
+              </button>
+          {% endif %}
 
-        {% if user.role == 'admin' or user.role == 'officer' %}
-            <div class="mt-4 d-flex gap-2">
-                <button class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#requestMoreInfoModal">
-                    <i class="bi bi-question-circle"></i> Request More Info
-                </button>
-            </div>
-        {% endif %}
-        {% if user.role == 'officer' %}
-        <button class="btn btn-outline-primary mt-3" data-bs-toggle="modal" data-bs-target="#updateStatusModal">
-            <i class="bi bi-pencil-square"></i> Update Status
-        </button>
-        {% endif %}
-        {% if user.role == 'admin' %}
-        <button class="btn btn-outline-danger mt-3" data-bs-toggle="modal" data-bs-target="#updatePriorityModal">
-            <i class="bi bi-exclamation-circle"></i> Change Priority
-        </button>
-        {% endif %}
 
+        
 
     </div>
 </div>
@@ -106,3 +117,16 @@
     </div>
   </div>
   
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let requestInfoBtn = document.getElementById("requestInfoBtn");
+    
+        if (requestInfoBtn.hasAttribute("disabled")) {
+            requestInfoBtn.addEventListener("click", function(event) {
+                event.preventDefault(); // Prevent any default action
+                alert("This button is disabled because the case is closed or resolved.");
+            });
+        }
+    });
+    </script>
+    

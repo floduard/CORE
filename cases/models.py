@@ -31,7 +31,7 @@ class CybercrimeReport(models.Model):
         ('critical', 'Critical'),
         ]
     
-    user = models.ForeignKey(User, on_delete=models.CASCADE,null=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     crime_type = models.ForeignKey(CybercrimeType, on_delete=models.CASCADE)
     description = models.TextField()
     date = models.DateField()
@@ -53,7 +53,7 @@ class CybercrimeReport(models.Model):
     
     def clean(self):
         if self.status == 'closed' and not self.recommendations:
-            raise ValidationError('Recommendations are required for resolved reports.')
+            raise ValidationError('Recommendations are required for closed cases')
             if self.priority == 'critical' and not self.evidence:
                 raise ValidationError('Evidence is required for critical priority reports.')
     

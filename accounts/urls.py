@@ -16,6 +16,7 @@ urlpatterns = [
     # Profiles
     path('profile/', views.edit_profile, name='profile'),
     path('profile/view/', views.profile_view, name='profile_view'),
+    path('admin/user/<int:user_id>/edit/', views.admin_update_user_view, name='admin-update-user'),
 
 
     # add Users

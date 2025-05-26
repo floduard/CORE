@@ -42,7 +42,7 @@
             {% endif %}
           </td>
           <td>
-            <a href="{% url 'profile' %}" class="btn btn-sm btn-info">Update</a>
+            <a href="{% url 'admin-update-user' user.id %}" class="btn btn-sm btn-info">Update</a>
             <a href="{% url 'toggle_user_status' user.id %}" class="btn btn-sm {% if user.is_active %}btn-warning{% else %}btn-success{% endif %}">
               {% if user.is_active %}Diactivate{% else %}Activate{% endif %}
             </a>
