@@ -29,6 +29,10 @@ urlpatterns = [
     path('assigned-reports/', views.assigned_reports, name='assigned_reports'),
     path('assign_case/<int:pk>/', views.assign_case_to_officer, name='assign_case'),
     path('case/<int:pk>/assignment-history/', views.case_assignment_history, name='case_assignment_history'),
+    
+    # model 
+    path('cases/assign/<int:report_id>/', views.assign_to_officer, name='assign_to_officer'),
+
 
     
     # Report Handling

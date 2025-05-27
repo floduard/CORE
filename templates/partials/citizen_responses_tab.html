@@ -1,16 +1,10 @@
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-info text-white fw-bold">Citizen Responses</div>
     <div class="card-body">        
-            <div class="mb-3">
-                <h6 class="fw-bold">Additional Contact Info</h6>
-                <p>{{ report.additional_contacts }}</p>
-            </div>
-        
-
-        
+                
             <div class="alert alert-success mt-3">
                 <h6 class="fw-bold">Additional Information</h6>
-                <p>{{ report.more_details|linebreaks }}</p>
+                <p>{{ report.more_details|linebreaks |default:"N/A" }}</p>
             </div>
             
         

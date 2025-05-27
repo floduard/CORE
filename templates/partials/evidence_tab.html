@@ -61,7 +61,7 @@
                 {% endif %}
             </div>
             <div class="card-footer text-end">
-                <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#uploadEvidenceModal">
+                <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#uploadEvidenceModal"  {% if report.status == 'closed' or report.status == 'resolved' %}disabled{% endif %}>
                     <i class="bi bi-upload"></i> Upload More Evidence
                 </button>
             </div>

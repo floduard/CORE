@@ -142,7 +142,15 @@
                     <p class="warning" id="suspects_warning"></p>
                     <div class="text-danger small">{{ form.suspects.errors }}</div>
                 </div>
-
+                <!-- Additional Information -->
+                <div class="col-12">
+                    <label for="{{ form.additional_contacts.id_for_label }}" class="form-label">
+                        Additional Information <span style="color:#ccc;">(Optional)</span>
+                    </label>
+                    {{ form.additional_contacts|add_class:"form-control"|attr:"rows:3" }}
+                    <p class="warning" id=" additional_contacts_warning"></p>
+                    <div class="text-danger small">{{ form.additional_info.errors }}</div>
+                </div>
                 <div class="col-12 text-end pt-4">
                     <button type="submit" class="btn btn-primary shadow-sm">
                         <i class="bi bi-send"></i> Submit Case
@@ -199,11 +207,11 @@ document.addEventListener("DOMContentLoaded", function() {
         let file = this.files[0];  // Get selected file
 
         if (file) {
-            let allowedExtensions = ["jpg", "jpeg", "png", "mp4", "pdf"];
+            let allowedExtensions = ["jpg", "jpeg", "png", "mp4", "pdf", "mp3", "wav"];
             let fileExtension = file.name.split('.').pop().toLowerCase();  // Extract file extension
 
             if (!allowedExtensions.includes(fileExtension)) {
-                warning.textContent = "Invalid file type. Please upload an image, video, or pdf document.";
+                warning.textContent = "Invalid file type. Please upload an image, video, audio, or pdf document.";
                 warning.style.display = "block";
                 this.value = "";  // Clear invalid selection
             } else {

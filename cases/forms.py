@@ -48,8 +48,8 @@ class CybercrimeReportForm(forms.ModelForm):
         if file:
             if file.size > 10 * 1024 * 1024:  # 10MB limit
                 raise forms.ValidationError("File too large (max 10MB).")
-            if not file.content_type in ['application/pdf', 'image/jpeg', 'image/png', 'video/mp4']:
-                raise forms.ValidationError("Invalid file type. Only PDF, JPG, PNG, or MP4 allowed.")
+            if not file.content_type in ['application/pdf', 'image/jpeg', 'image/png', 'video/mp4','audio/mp3','audio/wav']:
+                raise forms.ValidationError("Invalid file type. Only PDF, JPG, PNG, MP4, MP3, or WAV allowed.")
         return file
     
     def __init__(self, *args, **kwargs):

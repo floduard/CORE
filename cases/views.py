@@ -18,6 +18,7 @@ from datetime import timedelta
 from django.db.models import F
 from django.db.models.functions import Concat
 from django.db.models import Value
+from django.utils.timezone import localtime, now
 
 
 def available_cybercrimes(request):
@@ -169,6 +170,7 @@ def all_reports_view(request):
 @login_required
 def report_detail_view(request, pk):
     report = get_object_or_404(CybercrimeReport, pk=pk)
+    officers = User.objects.filter(role='officer', is_active=True).order_by('last_name')
     if request.user.role == 'admin':
         activity_logs = ActivityLog.objects.filter(action__icontains=report.tracking_id)
     else:
@@ -176,6 +178,7 @@ def report_detail_view(request, pk):
     return render(request, 'reports/report_detail.html', {
         'report': report,
         'activity_logs': activity_logs,
+        'officers': officers,
         # other context data
     })
     
@@ -279,53 +282,63 @@ def send_additional_details(request, pk):
 
 @login_required
 def request_more_info(request, pk):
-        report = get_object_or_404(CybercrimeReport, pk=pk)
-        if report.assignee:  # Ensure assignee is not None
-            user_instance = User.objects.get(id=report.assignee.pk)
-        else:
-            user_instance = None  # Or handle it appropriately
+    report = get_object_or_404(CybercrimeReport, pk=pk)
+    
+    
+
+    if request.method == 'POST' and request.user.role in ['admin', 'officer']:
+        request_more_info_data = request.POST.get('request_more_info', "").strip()
         
-        if request.method == 'POST' and request.user.role in ['admin', 'officer']:
-            request_more_info_data= request.POST.get('request_more_info', "")
-            report.request_more_info = Concat(F('request_more_info'), Value("\n"), Value(request_more_info_data))
-            report.save()
-            messages.success(request, "More info requested.")
-            notify_user(
-                recipient=user_instance ,
-                message=f"More info requested for case {report.tracking_id} as {request_more_info_data}",
+        # Append new info to existing info
+        if report.request_more_info:
+            report.request_more_info += f"\n{request_more_info_data}"
+        else:
+            report.request_more_info = request_more_info_data
+
+        report.save()
+
+        messages.success(request, "More info requested.")
+
+        
+        notify_user(
+                recipient=report.user,
+                message=f"More info requested for case {report.tracking_id}: {request_more_info_data}",
                 url=reverse('report_detail', args=[report.pk])
             )
 
-            ActivityLog.objects.create(
-                user=request.user,
-                action=f"Details requested for case {report.tracking_id}."
-            )
-            return redirect('report_detail', pk=pk)
-        return redirect('report_detail', pk=pk)  # Redirect if not POST
+        ActivityLog.objects.create(
+            user=request.user,
+            action=f"Details requested for case {report.tracking_id}."
+        )
+
+    return redirect('report_detail', pk)
     
 @login_required
 def provide_recommendation(request, pk):
-    report = get_object_or_404(CybercrimeReport, pk=pk)
-    if report.assignee:  # Ensure assignee is not None
-            user_instance = User.objects.get(id=report.assignee.pk)
-    else:
-            user_instance = None  # Or handle it appropriately
+    report = get_object_or_404(CybercrimeReport, pk=pk)    
    
     if request.method == 'POST' and request.user.role in ['admin', 'officer']:
-        new_recommendation= request.POST.get('recommendations', "")
-        report.recommendations = Concat(F('recommendations'), Value("\n"), Value(new_recommendation))
-        report.save()
-        messages.success(request, "Recomandations provided.")
-        notify_user(
-                    recipient= user_instance,
-                    message=f"Recomandations provided.. as {new_recommendation}.",
-                     url=reverse('report_detail', args=[report.pk])
-                )
-        ActivityLog.objects.create(
+            new_recommendation = request.POST.get('recommendations', "").strip()
+            if new_recommendation:
+                if report.recommendations:
+                    report.recommendations += f"\n{new_recommendation}"
+                else:
+                    report.recommendations = new_recommendation
+                report.save()
+
+                messages.success(request, "Recommendations provided.")
+                
+                notify_user(
+                        recipient=report.user,
+                        message=f"Recommendations provided: {new_recommendation}",
+                        url=reverse('report_detail', args=[report.pk])
+                    )
+
+                ActivityLog.objects.create(
                     user=request.user,
-                    action=f"Recomandations provided for case {report.tracking_id}. "
+                    action=f"Recommendations provided for case {report.tracking_id}."
                 )
-    return redirect('report_detail', pk=pk)
+    return redirect('report_detail', pk)
 
 @login_required
 def update_status_priority(request, pk):
@@ -362,6 +375,13 @@ def update_report_status(request, pk):
         old_status = report.status
         report.status = new_status
         report.save()
+
+        if new_status!= 'Closed':
+            notify_user(
+                        recipient=report.user,
+                        message=f"Your Case with {report.tracking_id} have been Closed at {localtime(now()).strftime("%Y-%m-%d %H:%M:%S")} .",
+                        url=reverse('report_detail', args=[report.pk])
+                    )
 
         ActivityLog.objects.create(
             user=request.user,
@@ -616,4 +636,22 @@ def delete_additional_evidence(request, evidence_id):
     # Delete the DB entry
     evidence.delete()
     messages.success(request, "Additional evidence deleted successfully.")
+    return redirect('report_detail', report_id)
+
+
+@login_required
+@user_passes_test(lambda u: u.role == 'admin')  # Only admin can assign
+def assign_to_officer(request, report_id):
+    report = get_object_or_404(CybercrimeReport, id=report_id)
+    
+    if request.method == 'POST':
+        officer_id = request.POST.get('officer_id')
+        if officer_id:
+            officer = get_object_or_404(User, id=officer_id, role='officer', is_active=True)
+            report.assignee = officer
+            report.save()
+            messages.success(request, f"Assigned to Officer {officer.get_full_name()}")
+        else:
+            messages.error(request, "No officer selected.")
+    
     return redirect('report_detail', report_id)
