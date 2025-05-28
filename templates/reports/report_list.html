@@ -13,7 +13,7 @@
                     <th>Date of Incident</th>
                     <th> Submitted At </th>
                     <th> Submoted By </th>
-                    <th>View</th>
+                    <th>Open</th>
                 </tr>
             </thead>
             <tbody>
@@ -27,12 +27,21 @@
                     <td>{{ report.submitted_at }}</td>
                     <td>{{ report.user |default:'Unknown' }}</td>
                     <td>
-                        <a href="{% url 'report_detail' report.pk %}" class="btn btn-sm btn-primary">Details</a>
+                        {% if user.is_authenticated %}
+                                 {% if user.role == 'admin' %}
+                                   <a href="{% url 'report_detail' report.pk %}" class="btn btn-sm btn-primary">Open</a>
+                                 {% elif user.role == 'officer' and report.assignee == user %}
+                                   <a href="{% url 'report_detail' report.pk %}" class="btn btn-sm btn-primary">Open</a>
+                                   {% elif user.role == 'citizen' and report.user == user %}
+                                   <a href="{% url 'report_detail' report.pk %}" class="btn btn-sm btn-primary">Open</a>
+                                  {% endif %}
+                        {% endif %}
+
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
-        </table>
+         </table>
     {% else %}
         <p class="text-muted">No reports found.</p>
     {% endif %}
