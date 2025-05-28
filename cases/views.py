@@ -41,12 +41,13 @@ def add_cybercrime(request):
         if form.is_valid():
             form.save()
             new_crime = form.save()
+            url = f"/cases/cybercrimes/{new_crime.pk}/"            
             users = User.objects.all()
             for user in users:
                 notify_user(
                     recipient=user,
                     message=f"A new cybercrime type '{new_crime.name}' has been added.",
-                    url=f"/cybercrimes/{new_crime.pk}/"
+                    url=url
                 )
                 ActivityLog.objects.create(
                     user=request.user,
@@ -72,16 +73,18 @@ def edit_cybercrime(request, pk):
 @user_passes_test(is_admin)
 def delete_cybercrime(request, pk):
     crime = get_object_or_404(CybercrimeType, pk=pk)
+    crime_name = crime.name
+
+    users = User.objects.filter(email__isnull=False).exclude(role='admin')
     if request.method == 'POST':
-        crime.delete()
-        users = User.objects.all()
+        crime.delete()        
         for user in users:
                 notify_user(
                     recipient=user,
-                    message=f"A new cybercrime type '{crime.name}' has been added.",
-                    url=reverse('available_cybercrimes', args=[crime.pk])
+                    message=f"A cybercrime type '{crime_name}' has been deleted.",
+                    url=reverse('available_cybercrimes')
                 )
-                ActivityLog.objects.create(
+        ActivityLog.objects.create(
                     user=request.user,
                     action='Cybercrime category deleted'
                 )
@@ -96,7 +99,8 @@ def cybercrime_detail(request, pk):
 
 
 
-def submit_cybercrime_report(request):
+def submit_cybercrime_report(request):    
+    recipient_email=request.user.email
     if request.method == 'POST':
         form = CybercrimeReportForm(request.POST, request.FILES)
         if form.is_valid():
@@ -115,6 +119,18 @@ def submit_cybercrime_report(request):
                     user=request.user,
                     action=f"Case with {report.tracking_id} Tracking ID submitted. "
                 )
+
+                subject = "Case submitted successfully"
+                DEFAULT_FROM_EMAIL='noreply@cras.com'
+                message =f"Your case  has been submitted successfully. Your Tracking ID is: {report.tracking_id} Our Team is going to work on it as soon as possible. stay tuned for updates."
+
+                send_mail(
+                                subject,
+                                message,
+                                DEFAULT_FROM_EMAIL,
+                                [recipient_email],
+                                fail_silently=False,
+                            )
             if request.user.is_authenticated:
               messages.success(request, f"Report submitted successfully! Your Tracking ID is: {report.tracking_id}")
             return redirect('report_success') 
@@ -189,23 +205,31 @@ def report_update_view(request, pk):
     form = CybercrimeReportForm(request.POST or None, request.FILES or None, instance=report)
     if form.is_valid():
         form.save()
-        ActivityLog.objects.create(
-                    user=request.user,
-                    action=f"Case with {report.tracking_id} Tracking ID updated. "
-                )
-        messages.success(request, "Report updated successfully.")
-        return redirect('all_reports')
+        if request.user.is_authenticated:
+            ActivityLog.objects.create(
+                        user=request.user,
+                        action=f"Case with {report.tracking_id} Tracking ID updated. "
+                    )
+            messages.success(request, "Report updated successfully.")
+            return redirect('all_reports')
     return render(request, 'reports/report_form.html', {'form': form, 'title': 'Edit Report'})
 
 @user_passes_test(is_admin)
 def report_delete_view(request, pk):
     report = get_object_or_404(CybercrimeReport, pk=pk)
+    tracking = report.tracking_id
     report.delete()
-    ActivityLog.objects.create(
-                    user=request.user,
-                    action=f"Case with {report.tracking_id} Tracking ID deleted. "
+    if request.user.is_authenticated:
+        Notification.objects.create(
+                    recipient=report.user,
+                    message=f"A case with  Tracking ID is: {tracking} have been Deleted",
+                    url=reverse('all_reports')
                 )
-    messages.success(request, "Report deleted.")
+        ActivityLog.objects.create(
+                        user=request.user,
+                        action=f"Case with {tracking} Tracking ID deleted. "
+                    )
+        messages.success(request, "Report deleted.")
     return redirect('all_reports')
 
 
@@ -216,7 +240,7 @@ def my_reports(request):
 
 @login_required
 def delete_report(request, pk):
-    report = get_object_or_404(CybercrimeReport, pk=pk, reported_by=request.user)
+    report = get_object_or_404(CybercrimeReport, pk=pk, user=request.user)
     if report.status.lower() == 'pending':
         report.delete()
         ActivityLog.objects.create(
@@ -237,11 +261,12 @@ def assigned_reports(request):
 @login_required
 def update_report_status(request, pk):
     report = get_object_or_404(CybercrimeReport, pk=pk)
+    user_instance = User.objects.get(id=report.assignee.pk)
     if request.method == 'POST' and request.user.role in ['admin', 'officer']:
         new_status = request.POST.get('status')
         if new_status in ['Pending', 'Under Investigation', 'Resolved','Rejected','Closed', 'Irrelevant']:
             notify_user(
-                    recipient=request.user,
+                    recipient=user_instance,
                     message=f"Your Case Status updated to {new_status}.",
                     url=reverse('report_detail', args=[report.pk])
                 )
@@ -251,7 +276,7 @@ def update_report_status(request, pk):
                 )
             report.status = new_status
             report.save()
-    return redirect('report_detail', pk=pk)
+    return redirect('report_detail', pk)
 
 
 @login_required

@@ -42,7 +42,7 @@ from reportlab.pdfgen import canvas
 from io import BytesIO
 from django.views.decorators.http import require_GET
 from django.utils import timezone
-
+from django.core.mail import send_mail
 
 def officer_required(view_func):
     return user_passes_test(lambda u: u.is_authenticated and u.role == 'officer' or u.role == 'admin')(view_func)
@@ -280,7 +280,7 @@ def role_based_dashboard(request):
         {"title": "Most Reported Crime", "value": crime_stat_label, "link":reverse("most_reported_crime")},
         {"title": "High Rated Zone", "value": top_zone_name, "link": reverse("top_zones")},
     ]
-
+    recent_activities = [] 
     if request.user.role == 'admin':
             recent_activities = ActivityLog.objects.all().order_by('-timestamp')[:5]           
 
@@ -323,11 +323,23 @@ def manage_users(request):
 @user_passes_test(is_admin)
 def delete_user(request, user_id):
     user = get_object_or_404(User, id=user_id)
+    recipient_email = user.email
     user.delete()
     ActivityLog.objects.create(
             user=request.user,
             action=f"User {user} Deleted",
         )
+    subject = 'Account Deleted'
+    DEFAULT_FROM_EMAIL='noreply@cras.com'
+    message =f"User {user} has been deleted from cybercrime reporting system."
+
+    send_mail(
+                subject,
+                message,
+                DEFAULT_FROM_EMAIL,
+                [recipient_email],
+                fail_silently=False,
+            )
     messages.success(request, 'User deleted successfully.')
     return redirect('manage_users')
 
@@ -335,9 +347,21 @@ def delete_user(request, user_id):
 @user_passes_test(is_admin)
 def toggle_user_status(request, user_id):
     user = get_object_or_404(User, id=user_id)
+    recipient_email = user.email 
     user.is_active = not user.is_active
     user.save()
     status = 'enabled' if user.is_active else 'disabled'
+    subject = f"{user} Account   {status}"
+    DEFAULT_FROM_EMAIL='noreply@cras.com'
+    message =f"User {user} has been {status} from cybercrime reporting system."
+
+    send_mail(
+                subject,
+                message,
+                DEFAULT_FROM_EMAIL,
+                [recipient_email],
+                fail_silently=False,
+            )
     ActivityLog.objects.create(
             user=request.user,
             action=f"User {user} is now {status}",
@@ -631,9 +655,9 @@ def admin_update_user_view(request, user_id):
     if target_user.role == "citizen":
         skip_fields = ["badge_id", "department", "office_name", "managed_since"]
     elif target_user.role == "officer":
-        skip_fields = ["id_number", "birth_date", "office_name", "managed_since"]
+        skip_fields = ["id_number", "office_name", "managed_since"]
     elif target_user.role == "admin":
-        skip_fields = ["id_number", "birth_date", "badge_id", "department"]
+        skip_fields = ["id_number",  "badge_id", "department"]
     else:
         skip_fields = []
 
