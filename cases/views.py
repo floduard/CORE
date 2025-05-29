@@ -99,8 +99,9 @@ def cybercrime_detail(request, pk):
 
 
 
-def submit_cybercrime_report(request):    
-    recipient_email=request.user.email
+def submit_cybercrime_report(request): 
+    if request.user.is_authenticated:
+        recipient_email=request.user.email
     if request.method == 'POST':
         form = CybercrimeReportForm(request.POST, request.FILES)
         if form.is_valid():
