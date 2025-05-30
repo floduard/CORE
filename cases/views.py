@@ -405,7 +405,7 @@ def update_report_status(request, pk):
         if new_status!= 'Closed':
             notify_user(
                         recipient=report.user,
-                        message=f"Your Case with {report.tracking_id} have been Closed at {localtime(now()).strftime("%Y-%m-%d %H:%M:%S")} .",
+                        message=f"Your Case with {report.tracking_id} have been Closed at {localtime(now())} .",
                         url=reverse('report_detail', args=[report.pk])
                     )
 
