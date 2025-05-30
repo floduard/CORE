@@ -12,9 +12,7 @@ python manage.py migrate --noinput
 echo "🎨 Collecting static files..."
 python manage.py collectstatic --noinput
 
-echo "✅ Build complete."
-
- 
+echo "✅ Build complete." 
 
 if [[ $CREATE_SUPERUSER ]];
 then
