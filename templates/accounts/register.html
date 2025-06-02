@@ -73,10 +73,15 @@
 
           <div class="card-body">
             <div class="text-center mb-3">
-              
             </div>
             <form method="post" novalidate>
                 {% csrf_token %}
+                {# Non-field errors (like "you must agree to terms") #}
+                {% if form.non_field_errors %}
+                  <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                  </div>
+                {% endif %}
                 {% for field in form %}
                     <div class="mb-3">
                         <label class="form-label">
@@ -103,6 +108,12 @@
                         {% endif %}
                     </div>
                 {% endfor %}
+                <div class="mb-3 form-check">
+                  <input class="form-check-input" type="checkbox" id="agreeTerms" name="agree_terms" required>
+                  <label class="form-check-label small" for="agreeTerms">
+                    I agree to the <a href="{% url 'terms_and_conditions' %}" target="_blank">Terms and Conditions</a>
+                  </label>
+                </div>
                 <button type="submit" class="btn btn-cyber w-100 mb-2">
                   <i class="bi bi-person-check"></i> Register
                 </button>
@@ -115,14 +126,12 @@
               <i class="bi bi-box-arrow-in-right"></i> Login
             </a>
             <div class="mt-2">
-             
               <p class="small text-muted mt-2 mb-0">
                 <i class="bi bi-shield-lock-fill"></i> In partnership with Citizens & Local Law Enforcement
               </p>
             </div>
           </div>
         </div>
-        
         <div class="text-center text-light small mt-2">
           <i class="bi bi-building"></i> CyberCity Security &copy; {{ now|date:"Y" }}
         </div>

@@ -78,18 +78,23 @@ def my_feedbacks(request):
     feedbacks = Feedback.objects.filter(user=request.user).order_by('-submitted_at')
     return render(request, 'feedback/my_feedbacks.html', {'feedbacks': feedbacks})
 
-@login_required
+
 def submit_feedback(request):
     if request.method == 'POST':
         form = FeedbackForm(request.POST)
         if form.is_valid():
             feedback = form.save(commit=False)
-            feedback.user = request.user
+            if request.user.is_authenticated:
+                feedback.user = request.user  # Assign only if authenticated
             feedback.save()
-            return redirect('my_feedbacks')
+            if request.user.is_authenticated:
+                return redirect('my_feedbacks')
+            else:
+                return redirect('about')
     else:
         form = FeedbackForm()
     return render(request, 'feedback/submit_feedback.html', {'form': form})
+
 
 @user_passes_test(lambda u: u.role == 'admin')
 def feedback_list(request):

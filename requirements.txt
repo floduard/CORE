@@ -1,6 +1,8 @@
 asgiref==3.8.1
 Brotli==1.1.0
+certifi==2025.4.26
 chardet==5.2.0
+charset-normalizer==3.4.2
 click==8.2.1
 dj-database-url==2.3.0
 Django==5.2.1
@@ -11,14 +13,17 @@ django-recaptcha==4.1.0
 django-widget-tweaks==1.5.0
 gunicorn==23.0.0
 h11==0.16.0
+idna==3.10
 packaging==25.0
 phonenumbers==9.0.5
 pillow==11.2.1
 psycopg2-binary==2.9.10
 python-dotenv==1.1.0
 reportlab==4.4.1
+requests==2.32.3
 sorl-thumbnail==12.11.0
 sqlparse==0.5.3
 typing_extensions==4.13.2
+urllib3==2.4.0
 uvicorn==0.34.2
 whitenoise==6.9.0

@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% block title %}Terms and Conditions{% endblock %}
+{% block content %}
+<style>
+  .terms-bg {
+    min-height: 100vh;
+    background: url('https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1200&q=80') center center/cover no-repeat;
+    position: relative;
+  }
+  .terms-overlay {
+    background: rgba(18, 26, 40, 0.88);
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    top: 0; left: 0;
+    z-index: 1;
+  }
+  .terms-card {
+    z-index: 2;
+    position: relative;
+    border-radius: 1.2rem !important;
+    box-shadow: 0 0 20px #0dcaf0;
+    margin-top: 50px;
+    margin-bottom: 50px;
+  }
+  .terms-icon {
+    font-size: 2.2rem;
+    color: #0dcaf0;
+    text-shadow: 0 0 10px #0dcaf0;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  .section-icon {
+    font-size: 1.2rem;
+    color: #0dcaf0;
+    margin-right: 7px;
+    vertical-align: middle;
+  }
+  .city-footer-img {
+    width: 100%;
+    max-height: 60px;
+    object-fit: cover;
+    opacity: 0.25;
+    margin-top: 24px;
+  }
+</style>
+<div class="terms-bg">
+  <div class="terms-overlay"></div>
+  <div class="container position-relative" style="z-index:2;">
+    <div class="row justify-content-center align-items-center" style="min-height:100vh;">
+      <div class="col-lg-8">
+        <div class="card terms-card shadow-lg my-5">
+          <div class="card-header text-center bg-primary text-white rounded-top">
+            <i class="bi bi-shield-lock-fill terms-icon"></i>
+            <h3 class="d-inline align-middle">Terms and Conditions</h3>
+            <p class="mb-0 text-info"><i class="bi bi-info-circle"></i> Please read these carefully before using the portal</p>
+          </div>
+          <div class="card-body bg-dark text-light">
+            <p class="text-muted mb-4">Effective date: {{ now|date:"Y-m-d" }}</p>
+
+            <h5><i class="bi bi-building section-icon"></i> Introduction</h5>
+            <p>
+              Welcome to the Cybercrimes Reporting and Awareness Portal. By registering and using this platform, you agree to abide by the following terms and conditions. Please read them carefully before using the portal for reporting or accessing information about cybercrimes.
+            </p>
+
+            <h5><i class="bi bi-bullseye section-icon"></i> Purpose of the Portal</h5>
+            <p>
+              This portal is designed to facilitate the responsible reporting of cybercrimes, promote cyber safety awareness, and support communication between citizens and law enforcement.
+            </p>
+
+            <h5><i class="bi bi-check-circle-fill section-icon"></i> What You Must Do (Dos)</h5>
+            <ul>
+              <li>Provide accurate, truthful, and complete information when registering and reporting incidents.</li>
+              <li>Report only genuine and verifiable cybercrime incidents that you have experienced or witnessed.</li>
+              <li>Cooperate with law enforcement if further information or clarification is required about a reported incident.</li>
+              <li>Respect the privacy and confidentiality of all users and individuals mentioned in reports.</li>
+              <li>Update your contact information if changed, to ensure you can be reached for follow-up.</li>
+              <li>Use the portal for lawful purposes only.</li>
+              <li>Protect your login credentials and immediately report any unauthorized access to your account.</li>
+              <li>Read and follow all additional guidelines and policies shared by the portal or authorities.</li>
+              <li>Seek guidance from law enforcement or portal support if you are unsure how to report an incident.</li>
+              <li>Comply with all local, national, and international laws related to cybercrime reporting.</li>
+            </ul>
+
+            <h5><i class="bi bi-x-circle-fill section-icon"></i> What You Must Not Do (Don'ts)</h5>
+            <ul>
+              <li>Do <strong>not</strong> submit false, misleading, or malicious reports.</li>
+              <li>Do <strong>not</strong> use the portal to harass, threaten, or defame any individual or organization.</li>
+              <li>Do <strong>not</strong> upload or share illegal, offensive, or harmful content.</li>
+              <li>Do <strong>not</strong> attempt to access, modify, or destroy data you do not own or have permission to use.</li>
+              <li>Do <strong>not</strong> impersonate others or provide fraudulent identification.</li>
+              <li>Do <strong>not</strong> share your login credentials with anyone else.</li>
+              <li>Do <strong>not</strong> use bots, scripts, or other automated means to access or use the portal.</li>
+              <li>Do <strong>not</strong> interfere with the operation or security of the portal.</li>
+              <li>Do <strong>not</strong> violate the privacy of others by disclosing sensitive or personal information without consent.</li>
+              <li>Do <strong>not</strong> submit complaints or reports unrelated to cybercrimes.</li>
+            </ul>
+
+            <h5><i class="bi bi-person-lock section-icon"></i> Confidentiality and Privacy</h5>
+            <ul>
+              <li>All reports and personal information submitted will be handled in accordance with applicable privacy laws and the portal’s privacy policy.</li>
+              <li>Reports may be shared with law enforcement agencies for investigation and action.</li>
+              <li>Your identity may be kept confidential unless disclosure is required by law.</li>
+            </ul>
+
+            <h5><i class="bi bi-exclamation-triangle-fill section-icon"></i> Consequences of Violations</h5>
+            <ul>
+              <li>Violation of these terms may result in suspension or termination of your account.</li>
+              <li>False reporting or misuse may be prosecuted under applicable laws.</li>
+              <li>The portal administrators reserve the right to remove content or block access without notice.</li>
+            </ul>
+
+            <h5><i class="bi bi-shield-exclamation section-icon"></i> Limitation of Liability</h5>
+            <ul>
+              <li>The portal provides a platform for reporting and does not guarantee action on every report.</li>
+              <li>The portal is not responsible for the outcome of investigations by law enforcement or other agencies.</li>
+              <li>The portal is not liable for any damages arising from misuse of the platform.</li>
+            </ul>
+
+            <h5><i class="bi bi-arrow-repeat section-icon"></i> Changes to These Terms</h5>
+            <p>
+              The administrators may update these terms at any time. Continued use of the portal after changes constitutes acceptance of the new terms.
+            </p>
+
+            <div class="alert alert-info mt-4" role="alert">
+              <i class="bi bi-info-circle"></i>
+              <strong>If you do not agree to these terms, please do not use the portal.</strong>
+            </div>
+          </div>
+          <div class="card-footer text-center bg-dark text-light rounded-bottom">
+            <i class="bi bi-building"></i> CyberCity Security &copy; {{ now|date:"Y" }}
+          </div>
+        </div>
+        <div class="text-center text-light small mt-2">
+          <img src="https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1200&q=80"
+               alt="Cyber City"
+               class="city-footer-img"/>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

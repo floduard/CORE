@@ -43,6 +43,8 @@ from io import BytesIO
 from django.views.decorators.http import require_GET
 from django.utils import timezone
 from django.core.mail import send_mail
+import requests
+from django.conf import settings
 
 def officer_required(view_func):
     return user_passes_test(lambda u: u.is_authenticated and u.role == 'officer' or u.role == 'admin')(view_func)
@@ -50,6 +52,11 @@ def officer_required(view_func):
 def citizen_register(request):
     if request.method == 'POST':
         form = CitizenRegisterForm(request.POST)
+        # Check if terms were agreed
+        if not request.POST.get('agree_terms'):
+            form.add_error(None, "You must agree to the Terms and Conditions to register.")
+            return render(request, 'accounts/register.html', {'form': form})
+
         if form.is_valid():
             user = form.save(commit=False)
             user.is_active = False  # Mark user inactive
@@ -72,7 +79,6 @@ def citizen_register(request):
     else:
         form = CitizenRegisterForm()
     return render(request, 'accounts/register.html', {'form': form})
-
 
 @login_required
 def dashboard(request):
@@ -153,11 +159,24 @@ def add_user(request):
     return render(request, 'accounts/admin/add_user.html', {'form': form})
 
 
-
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')  # already logged in
+
     if request.method == 'POST':
+        # 1. Verify reCAPTCHA first
+        recaptcha_response = request.POST.get('g-recaptcha-response')
+        data = {
+            'secret': settings.RECAPTCHA_SECRET_KEY,  # add this to your settings
+            'response': recaptcha_response
+        }
+        recaptcha_verify = requests.post('https://www.google.com/recaptcha/api/siteverify', data=data)
+        result = recaptcha_verify.json()
+        if not result.get('success'):
+            messages.error(request, 'Invalid reCAPTCHA. Please try again.')
+            return render(request, 'accounts/login.html')
+        
+        # 2. Continue with your login logic
         login_input = request.POST['username']  # this can be username or email
         password = request.POST['password']
         # First try username authentication
@@ -191,7 +210,8 @@ def login_view(request):
         else:
             messages.error(request, 'Invalid username/email or password.')
 
-    return render(request, 'accounts/login.html')
+    return render(request, 'accounts/login.html', {'RECAPTCHA_SITE_KEY': settings.RECAPTCHA_SITE_KEY})
+
 @login_required
 def logout_view(request):
     if request.user.is_authenticated:
