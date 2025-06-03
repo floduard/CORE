@@ -266,11 +266,12 @@ def update_report_status(request, pk):
     if request.method == 'POST' and request.user.role in ['admin', 'officer']:
         new_status = request.POST.get('status')
         if new_status in ['Pending', 'Under Investigation', 'Resolved','Rejected','Closed', 'Irrelevant']:
-            notify_user(
-                    recipient=user_instance,
-                    message=f"Your Case Status updated to {new_status}.",
-                    url=reverse('report_detail', args=[report.pk])
-                )
+            if user_instance:
+                notify_user(
+                        recipient=user_instance,
+                        message=f"Your Case Status updated to {new_status}.",
+                        url=reverse('report_detail', args=[report.pk])
+                    )
             ActivityLog.objects.create(
                     user=request.user,
                     action=f"Case with {report.tracking_id} Tracking ID status changed from '{report.status}' to '{new_status}'. "
@@ -407,11 +408,12 @@ def update_report_status(request, pk):
         report.save()
 
         if new_status!= 'Closed':
-            notify_user(
-                        recipient=report.user,
-                        message=f"Your Case with {report.tracking_id} have been Closed at {localtime(now())} .",
-                        url=reverse('report_detail', args=[report.pk])
-                    )
+            if report.user: 
+                notify_user(
+                            recipient=report.user,
+                            message=f"Your Case with {report.tracking_id} have been Closed at {localtime(now())} .",
+                            url=reverse('report_detail', args=[report.pk])
+                        )
 
         ActivityLog.objects.create(
             user=request.user,
@@ -431,7 +433,7 @@ def update_report_priority(request, pk):
         old_priority = report.priority
         report.priority = new_priority
         report.save()
-
+        
         ActivityLog.objects.create(
             user=request.user,
             action=f"Report with {report.tracking_id} Tracking ID priority updated from '{old_priority}' to '{new_priority}'",
@@ -452,22 +454,24 @@ def assign_case_to_officer(request, pk):
             case.save()
             if reassigned:
                 messages.success(request, f"New Case Assigned: {case.tracking_id}.")
-                notify_user(
-                    recipient=new_officer,
-                    message=f"New Case Assigned: {case.tracking_id}.",
-                     url=reverse('report_detail', args=[case.pk])
-                )
+                if new_officer:
+                    notify_user(
+                        recipient=new_officer,
+                        message=f"New Case Assigned: {case.tracking_id}.",
+                        url=reverse('report_detail', args=[case.pk])
+                    )
                 ActivityLog.objects.create(
                     user=request.user,
                     action=f"Report with {case.tracking_id} Tracking ID have been assigned to {new_officer} ,"
                 )
             else:
                 messages.success(request, f"New Case Assigned: {case.tracking_id}.")
-                notify_user(
-                    recipient=new_officer,
-                    message=f"New Case Assigned: {case.tracking_id}.",
-                     url=reverse('report_detail', args=[case.pk])
-                )
+                if new_officer:
+                    notify_user(
+                        recipient=new_officer,
+                        message=f"New Case Assigned: {case.tracking_id}.",
+                        url=reverse('report_detail', args=[case.pk])
+                    )
 
                 ActivityLog.objects.create(
                     user=request.user,
