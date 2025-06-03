@@ -14,8 +14,8 @@ python manage.py collectstatic --noinput
 
 echo "✅ Build complete." 
 
-if [[ $CREATE_SUPERUSER ]];
-then
- python manage.py createsuperuser --no-input --email "$DJANGO_SUPERUSER_EMAIL"
-fi
+# if [[ $CREATE_SUPERUSER ]];
+# then
+#  python manage.py createsuperuser --no-input --email "$DJANGO_SUPERUSER_EMAIL"
+# fi
 
