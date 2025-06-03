@@ -298,11 +298,15 @@ def send_additional_details(request, pk):
                     user= request.user,
                     action=f"Additional details submitted for case {report.tracking_id} as {new_details}. "
                 )
-        notify_user(
-                    recipient=user_instance,
-                    message=f"Additional details submitted for case {report.tracking_id} as {new_details}.",
-                    url=reverse('report_detail', args=[report.pk])
-                )
+        if user_instance:
+            notify_user(
+                        recipient=user_instance,
+                        message=f"Additional details submitted for case {report.tracking_id} as {new_details}.",
+                        url=reverse('report_detail', args=[report.pk])
+                    )
+        else:
+    # Optionally log or alert this
+              print("⚠️ No recipient found to send notification.")
     return redirect('report_detail', pk=pk)
 
 
@@ -324,18 +328,18 @@ def request_more_info(request, pk):
         report.save()
 
         messages.success(request, "More info requested.")
+        if report.user :
+            notify_user(
+                    recipient=report.user,
+                    message=f"More info requested for case {report.tracking_id}: {request_more_info_data}",
+                    url=reverse('report_detail', args=[report.pk])
+                )
 
-        
-        notify_user(
-                recipient=report.user,
-                message=f"More info requested for case {report.tracking_id}: {request_more_info_data}",
-                url=reverse('report_detail', args=[report.pk])
+            ActivityLog.objects.create(
+                user=request.user,
+                action=f"Details requested for case {report.tracking_id}."
             )
 
-        ActivityLog.objects.create(
-            user=request.user,
-            action=f"Details requested for case {report.tracking_id}."
-        )
 
     return redirect('report_detail', pk)
     
@@ -353,17 +357,17 @@ def provide_recommendation(request, pk):
                 report.save()
 
                 messages.success(request, "Recommendations provided.")
-                
-                notify_user(
-                        recipient=report.user,
-                        message=f"Recommendations provided: {new_recommendation}",
-                        url=reverse('report_detail', args=[report.pk])
-                    )
+                if report.user:
+                    notify_user(
+                            recipient=report.user,
+                            message=f"Recommendations provided: {new_recommendation}",
+                            url=reverse('report_detail', args=[report.pk])
+                        )
 
-                ActivityLog.objects.create(
-                    user=request.user,
-                    action=f"Recommendations provided for case {report.tracking_id}."
-                )
+                    ActivityLog.objects.create(
+                        user=request.user,
+                        action=f"Recommendations provided for case {report.tracking_id}."
+                    )
     return redirect('report_detail', pk)
 
 @login_required
