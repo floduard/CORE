@@ -83,3 +83,16 @@ class AdditionalEvidence(models.Model):
     file = models.FileField(upload_to='evidence/additional/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
     uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)  # optional
+
+
+
+# models.py
+class Suspect(models.Model):
+    case_report = models.ForeignKey(CybercrimeReport, on_delete=models.CASCADE, related_name='suspect')
+    name = models.CharField(max_length=255)
+    gender = models.CharField(max_length=20, choices=[('male', 'Male'), ('female', 'Female'), ('other', 'Other')])
+    contact_info = models.TextField(blank=True)
+    age = models.PositiveIntegerField(null=True, blank=True)
+    added_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+

@@ -87,3 +87,12 @@ class AdditionalEvidenceForm(forms.ModelForm):
         model = AdditionalEvidence
         fields = ['file']
         
+
+# forms.py
+class SuspectForm(forms.ModelForm):
+    class Meta:
+        model = Suspect
+        fields = ['name', 'gender', 'age', 'contact_info']
+        widgets = {
+            'gender': forms.Select(choices=[('male', 'Male'), ('female', 'Female'), ('other', 'Other')]),
+        }

@@ -69,6 +69,11 @@ urlpatterns = [
     path('activity-logs/', views.activity_logs_view, name='activity_logs'),
 
 
+    # suspects
+    path('reports/<int:pk>/add-suspect/', views.add_suspect, name='add_suspect'),
+    path('suspects/<int:suspect_id>/delete/', views.delete_suspect, name='delete_suspect'),
+
+
 ]
     
 

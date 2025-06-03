@@ -18,6 +18,7 @@ from datetime import timedelta
 from django.db.models import F
 from django.db.models.functions import Concat
 from django.db.models import Value
+from django.http import HttpResponseForbidden
 from django.utils.timezone import localtime, now
 
 
@@ -188,6 +189,9 @@ def all_reports_view(request):
 def report_detail_view(request, pk):
     report = get_object_or_404(CybercrimeReport, pk=pk)
     officers = User.objects.filter(role='officer', is_active=True).order_by('last_name')
+    suspect_form = SuspectForm()
+    case = get_object_or_404(CybercrimeReport, pk=pk)
+    suspects = Suspect.objects.filter(case_report=case)
     if request.user.role == 'admin':
         activity_logs = ActivityLog.objects.filter(action__icontains=report.tracking_id)
     else:
@@ -196,6 +200,9 @@ def report_detail_view(request, pk):
         'report': report,
         'activity_logs': activity_logs,
         'officers': officers,
+        'suspect_form':suspect_form,
+        'case': case,
+        'suspects': suspects,
         # other context data
     })
     
@@ -689,3 +696,28 @@ def assign_to_officer(request, report_id):
             messages.error(request, "No officer selected.")
     
     return redirect('report_detail', report_id)
+
+
+
+@login_required
+def add_suspect(request, pk):
+    case = get_object_or_404(CybercrimeReport, pk=pk)
+    if request.method == 'POST':
+        form = SuspectForm(request.POST)
+        if form.is_valid():
+            suspect = form.save(commit=False)
+            suspect.case_report = case
+            suspect.added_by = request.user
+            suspect.save()
+    return redirect('report_detail', pk=pk)
+
+
+@login_required
+def delete_suspect(request, suspect_id):
+    suspect = get_object_or_404(Suspect, pk=suspect_id)
+    if not request.user.role in 'admin officer.assignee':
+        return HttpResponseForbidden("You do not have permission to delete suspects.")
+
+    case_id = suspect.case_report.id  # To redirect back to the case detail
+    suspect.delete()
+    return redirect('report_detail',case_id)

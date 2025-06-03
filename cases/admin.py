@@ -6,4 +6,5 @@ admin.site.register(CybercrimeType)
 admin.site.register(CybercrimeReport)
 admin.site.register(CaseAssignmentHistory)
 admin.site.register(AdditionalEvidence)
+admin.site.register(Suspect)
  
