@@ -15,4 +15,7 @@ urlpatterns = [
     path('feedback/reply/<int:pk>/', views.reply_feedback, name='reply_feedback'),
     path('feedback/my/', views.my_feedbacks, name='my_feedbacks'),
     path('admin/feedback/delete/<int:pk>/', views.delete_feedback, name='delete_feedback'),
+
+    # logs
+    path('admin-logs/', views.admin_logs_view, name='admin_logs'),
 ]

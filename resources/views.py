@@ -7,6 +7,12 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils import timezone
+
+from django.contrib.admin.models import LogEntry
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+
 # Custom admin-only decorator
 def admin_required(view_func):
     return user_passes_test(lambda u: u.is_authenticated and u.role == 'admin')(view_func)
@@ -15,22 +21,13 @@ def admin_required(view_func):
 
 def resource_list(request):
     resources = Resource.objects.all()
-
-    # Visibility: Only show approved/visible resources to non-admins
-    
-
-    # Filtering by type and search
-    resource_type = request.GET.get('type')
+    resource_type = request.GET.get('category')
     if resource_type:
-        resources = resources.filter(type=resource_type)
-
+        resources = resources.filter(category=resource_type)
     q = request.GET.get('q')
     if q:
         resources = resources.filter(Q(name__icontains=q) | Q(description__icontains=q))
-
     resources = resources.order_by('date_uploaded')
-
-    # Pagination
     paginator = Paginator(resources, 10)  # 10 resources per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -131,3 +128,8 @@ def delete_feedback(request, pk):
     feedback.delete()
     return redirect('feedback_list')
 
+
+@login_required
+def admin_logs_view(request):
+    logs = LogEntry.objects.select_related('user', 'content_type').order_by('-action_time')[:100]
+    return render(request, 'logs/admin_logs.html', {'logs': logs})

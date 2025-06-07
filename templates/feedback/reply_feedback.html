@@ -1,13 +1,29 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container mt-5">
-  <h4>Reply to Feedback from {{ feedback.user.username }}</h4>
-  <p><strong>Message:</strong> {{ feedback.message }}</p>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary shadow-sm">
-        <i class="bi bi-send">Send Reply</button>
-  </form>
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h4 class="card-title mb-4 text-primary">
+            Reply to Feedback from <span class="text-secondary">{{ feedback.user.username }}</span>
+          </h4>
+          <div class="mb-4">
+            <strong>Message:</strong>
+            <p class="border rounded p-3 bg-light">{{ feedback.message }}</p>
+          </div>
+          <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="d-grid mt-3">
+              <button type="submit" class="btn btn-primary shadow-sm">
+                <i class="bi bi-send me-2"></i>Send Reply
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

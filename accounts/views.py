@@ -45,6 +45,10 @@ from django.utils import timezone
 from django.core.mail import send_mail
 import requests
 from django.conf import settings
+import csv
+from io import BytesIO
+from reportlab.pdfgen import canvas
+
 
 def officer_required(view_func):
     return user_passes_test(lambda u: u.is_authenticated and u.role == 'officer' or u.role == 'admin')(view_func)
@@ -449,56 +453,73 @@ def mark_as_read(request, pk):
 @login_required
 def generate_report(request):
     user = request.user
-    format_type = request.GET.get('format', 'html')  # default to HTML
-    today = now().date()
-    last_month = today - timedelta(days=30)
+    format_type = request.GET.get('format', 'html')
 
-    if user.role == 'admin':
-        # Prepare stats
+    # Parse date range from GET
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+
+    try:
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else now().date() - timedelta(days=30)
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else now().date()
+    except ValueError:
+        start_date = now().date() - timedelta(days=30)
+        end_date = now().date()
+
+    if user.role == 'admin' or user.role == 'officer':
         total_users = User.objects.count()
         total_citizens = User.objects.filter(role='citizen').count()
         total_officers = User.objects.filter(role='officer').count()
         total_admins = User.objects.filter(role='admin').count()
         total_reports = CybercrimeReport.objects.count()
-        recent_reports = CybercrimeReport.objects.filter(date__gte=last_month).count()
-        older_period = CybercrimeReport.objects.filter(date__lt=last_month).count()
-        assigned_reports = CybercrimeReport.objects.filter(assignee__isnull=False).count()
-        summary_message = f"""
-                            📊 Report Summary:
-                            - Total Users: {total_users}
-                            - Citizens: {total_citizens}
-                            - Officers: {total_officers}
-                            - Admins: {total_admins}
-                            - Total Reports: {total_reports}
-                            - Last 30 Days: {recent_reports}
-                            - Assigned Cases: {assigned_reports}
-                    
-                            """
+        filtered_reports = CybercrimeReport.objects.filter(date__range=[start_date, end_date])
+        recent_reports = filtered_reports.count()
+        assigned_reports = filtered_reports.filter(assignee__isnull=False).count()
+        closed_reports = CybercrimeReport.objects.filter(status='closed').count()
+        under_investigation = CybercrimeReport.objects.filter(status='under_investigation').count()
+        unassigned_reports = CybercrimeReport.objects.filter(assignee__isnull=True).count()
+        total_suspects = Suspect.objects.count()
+        total_evidence = AdditionalEvidence.objects.count()
+
+        period = request.GET.get('period', 'all')
+        today = now().date()
+        end_date = today
+        start_date = None
+
+        if period == 'today':
+            start_date = today - timedelta(days=1)
+        elif period == 'last_7_days':
+            start_date = today - timedelta(days=7)
+        elif period == 'last_30_days':
+            start_date = today - timedelta(days=30)
+        elif period == 'this_month':
+            start_date = today.replace(day=1)
+        elif period == 'this_year':
+            start_date = today.replace(month=1, day=1)
+
+        reports = CybercrimeReport.objects.all()
+        if start_date:
+            reports = reports.filter(date__range=(start_date, end_date))
+        reports_in_period = reports  
 
 
-        
+        # Trends
+        recent_period_start = today - timedelta(days=30)
+        older_period_start = today - timedelta(days=60)
+        last_30 = CybercrimeReport.objects.filter(date__range=[recent_period_start, today]).count()
+        prev_30 = CybercrimeReport.objects.filter(date__range=[older_period_start, recent_period_start]).count()
+        report_trend = f"{abs(((last_30 - prev_30) / prev_30) * 100):.2f}% {'increase' if last_30 > prev_30 else 'decrease'}" if prev_30 else "N/A"
 
-        recent_period_start = timezone.now() - timedelta(days=10)
-        older_period_start = timezone.now() - timedelta(days=30)
+        summary_message = f"""📊 Report Summary:
+        - Total Users: {total_users}
+        - Citizens: {total_citizens}
+        - Officers: {total_officers}
+        - Admins: {total_admins}
+        - Total Reports: {total_reports}
+        - Reports from {start_date} to {end_date}: {recent_reports}
+        - Assigned Cases: {assigned_reports}"""
 
-        # Reports in the last 30 days
-        recent_reports = CybercrimeReport.objects.filter(date__gte=recent_period_start).count()
-
-        # Reports from 30-60 days ago
-        older_reports = CybercrimeReport.objects.filter(
-            date__gte=older_period_start,
-            date__lt=recent_period_start
-        ).count()
-
-        if older_reports > 0:
-            change = ((recent_reports - older_reports) / older_reports) * 100
-            direction = "increase" if change > 0 else "decrease"
-            report_trend = f"{abs(change):.2f}% {direction}"
-        else:
-            report_trend = "N/A"  # Not enough data to compare
-
-
-        # CSV Export
+          # CSV Export
         if format_type == 'csv':
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="admin_report.csv"'
@@ -507,10 +528,16 @@ def generate_report(request):
             writer.writerow(['Total Users', total_users])
             writer.writerow(['Citizens', total_citizens])
             writer.writerow(['Officers', total_officers])
+            writer.writerow(['Admins', total_admins])
             writer.writerow(['Total Reports', total_reports])
-            writer.writerow(['Recent Reports (30 days)', recent_reports])
-            writer.writerow(['Trend', report_trend])
+            writer.writerow([f'Reports Since {start_date}', reports_in_period])
+            writer.writerow(['Open Reports', open_reports])
+            writer.writerow(['Closed Reports', closed_reports])
+            writer.writerow(['Under Investigation', under_investigation])
             writer.writerow(['Assigned Reports', assigned_reports])
+            writer.writerow(['Unassigned Reports', unassigned_reports])
+            writer.writerow(['Total Suspects', total_suspects])
+            writer.writerow(['Total Evidence Items', total_evidence])
             return response
 
         # PDF Export
@@ -523,11 +550,14 @@ def generate_report(request):
                 f"Total Users: {total_users}",
                 f"Citizens: {total_citizens}",
                 f"Officers: {total_officers}",
-                f"Officers: {total_admins}",
+                f"Admins: {total_admins}",
                 f"Total Reports: {total_reports}",
-                f"Recent Reports (30 days): {recent_reports}",
-                f"Trend: {report_trend}",
-                f"Assigned Reports: {assigned_reports}"
+                f"Closed Reports: {closed_reports}",
+                f"Under Investigation: {under_investigation}",
+                f"Assigned Reports: {assigned_reports}",
+                f"Unassigned Reports: {unassigned_reports}",
+                f"Total Suspects: {total_suspects}",
+                f"Total Evidence Items: {total_evidence}",
             ]
             for line in lines:
                 p.drawString(100, y, line)
@@ -537,72 +567,29 @@ def generate_report(request):
             buffer.seek(0)
             return HttpResponse(buffer, content_type='application/pdf')
 
-           
-
-
-        # HTML fallback
-        context = {
-            'title': f"Report Summary as on {today.strftime('%d %B, %Y')}",
+        return render(request, 'accounts/report_summary.html', {
+            'title': f"Report Summary from {start_date} to {end_date}",
             'total_users': total_users,
             'total_citizens': total_citizens,
             'total_officers': total_officers,
-            'total_officers': total_admins,
+            'total_admins': total_admins,
             'total_reports': total_reports,
             'recent_reports': recent_reports,
-            'report_trend': report_trend,
             'assigned_reports': assigned_reports,
-            'summary_message' : summary_message.strip(),
-        }
-        return render(request, 'accounts/report_summary.html', context)
+            'report_trend': report_trend,
+            'summary_message': summary_message.strip(),
+            'start_date': start_date,
+            'end_date': end_date,
+            'summary_message': summary_message.strip(),
+            'under_investigation': under_investigation,
+            'unassigned_reports': unassigned_reports,
+            'total_suspects': total_suspects,
+            'total_evidence': total_evidence,
+            'filter_period': period,
+            'reports_in_period': reports_in_period,
+        })
 
-    elif user.role == 'officer':
-        assigned_to_me = CybercrimeReport.objects.filter(assignee=user)
-        total_assigned = assigned_to_me.count()
-        closed_cases = assigned_to_me.filter(status='closed').count()
-        recent_activity = assigned_to_me.filter(updated_at__gte=last_month)
-
-        # CSV Export
-        if format_type == 'csv':
-            response = HttpResponse(content_type='text/csv')
-            response['Content-Disposition'] = 'attachment; filename="officer_report.csv"'
-            writer = csv.writer(response)
-            writer.writerow(['Metric', 'Value'])
-            writer.writerow(['Assigned Cases', total_assigned])
-            writer.writerow(['Closed Cases', closed_cases])
-            writer.writerow(['Recent Activity (30 days)', recent_activity.count()])
-            return response
-
-        # PDF Export
-        if format_type == 'pdf':
-            buffer = BytesIO()
-            p = canvas.Canvas(buffer)
-            p.drawString(100, 800, f"{user.get_full_name()}'s Report Summary")
-            y = 780
-            lines = [
-                f"Assigned Cases: {total_assigned}",
-                f"Closed Cases: {closed_cases}",
-                f"Recent Activity (30 days): {recent_activity.count()}"
-            ]
-            for line in lines:
-                p.drawString(100, y, line)
-                y -= 20
-            p.showPage()
-            p.save()
-            buffer.seek(0)
-            return HttpResponse(buffer, content_type='application/pdf')
-
-        # HTML fallback
-        context = {
-            'title': f"Report Summary as on {today.strftime('%d %B, %Y')}",
-            'total_assigned': total_assigned,
-            'closed_cases': closed_cases,
-            'recent_activity_count': recent_activity.count(),
-            'recent_activity': recent_activity,
-        }
-        return render(request, 'accounts/report_summary.html', context)
-
-    else:
-        return render(request, '403.html')
+    return render(request, '403.html')
 
 
 @login_required

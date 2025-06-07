@@ -16,15 +16,26 @@
       <div class="col-lg-7">
         <p class="lead text-secondary mb-4">
          🌐 CRAS <br>
-          We are a creative and dedicated team, passionate about building open, accessible, and impactful digital solutions. Through this Cybercrimes Reporting and Awareness System, we aim to empower individuals by making crime reporting more user-friendly, secure, and inclusive.
+          This is secure Platform for Reporting cybercrime incidents and suspicious activities. We are a team of cybersecurity experts, passionate about building open, accessible, and impactful digital solutions. Through this Cybercrimes Reporting and Awareness System, we aim to empower individuals by making cybercrime reporting more user-friendly, secure, and inclusive. as well as easy access to cybersecurity Materials and mentorship.
         </p>
         <div class="d-flex align-items-center gap-3">
+          {% if user.is_authenticated %}
           <a href="/" class="btn btn-lg btn-primary shadow">
             <i class="bi bi-house-door-fill me-1"></i> Home
           </a>
+          {% else %}
+          <a href="/" class="btn btn-lg btn-primary shadow">
+            <i class="bi bi-house-door-fill me-1"></i> Login
+          </a>
+          {% endif %}
           <a href="#team" class="btn btn-lg btn-outline-primary shadow">
             <i class="bi bi-stars me-1"></i> Meet the Team
           </a>
+          <!-- Trigger Button -->
+          <button type="button" class="btn btn-outline-primary shadow" data-bs-toggle="modal" data-bs-target="#incidentGuidelinesModal">
+            <i class="bi bi-stars me-1"></i> Incident Reporting Guidelines
+          </button>
+
         </div>
       </div>
       <div class="col-lg-5 text-center">
@@ -163,6 +174,50 @@
 </section>
 
 <!-- Custom CSS for hover and extras -->
+
+<!-- Incident Guidelines Modal -->
+<div class="modal fade" id="incidentGuidelinesModal" tabindex="-1" aria-labelledby="incidentGuidelinesLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="incidentGuidelinesLabel"> Incident Reporting Guidelines</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <h6><strong> Step 1: Understand What to Report</strong></h6>
+        <p>Report any suspicious or harmful digital activity like phishing, unauthorized access, data breaches, online fraud, or cyberbullying.</p>
+
+        <h6><strong> Step 2: Prepare Relevant Information</strong></h6>
+        <p>Collect details such as date, time, systems/accounts involved, evidence (screenshots, files), and any known suspects.</p>
+
+        <h6><strong>Step 3: Submit the Report</strong></h6>
+        <p>Use the <a href="{% url 'submit_cybercrime_report' %}">Report Cybercrime</a> form to submit the incident. Attach files and describe the incident clearly.</p>
+
+        <h6><strong>Step 4: Follow-Up</strong></h6>
+        <p>You’ll receive a tracking ID after submission. Use it to check the status and respond if contacted for additional info.</p>
+
+        <h6><strong>Best Practices</strong></h6>
+        <ul>
+          <li> register into the system for your incident tracking opportunity </li>
+          <li>Report incidents as soon as they occur</li>
+          <li>Do not forge evidence</li>
+          <li>Keep communication clear and respectful</li>
+          <li>Use strong passwords </li>
+          <li>Use help Center for further classifications or guidelines</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+        <button type="button" class="btn btn-outline-primary" onclick="window.print();">
+          <i class="bi bi-printer me-1"></i> Print
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <style>
 .team-card:hover {
   transform: translateY(-7px) scale(1.035);

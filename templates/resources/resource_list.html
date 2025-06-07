@@ -1,11 +1,10 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1 style="text-align:center; margin-bottom: 30px;">Resource List</h1>
+<h2 style="text-align:center; margin-bottom: 30px;">Cybersecurity Educational Hub</h2>
+<h5 style="text-align:center; margin-bottom: 30px;">view or download different categories of educational resources</h5>
 
-<!-- Filter/Search Form -->
 <form method="get" style="margin-bottom:20px; text-align:center;">
-  <input type="text" name="q" placeholder="Search…" value="{{ query }}" style="padding:6px; border-radius:4px; border:1px solid #ccc; margin-right:8px;">
   <select name="category" style="padding:6px; border-radius:4px; border:1px solid #ccc; margin-right:8px;">
       <option value="">All Categories</option>
       <option value="definition" {% if selected_category == "definition" %}selected{% endif %}>Definition</option>

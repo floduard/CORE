@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h3>Recent Admin Logs</h3>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Model</th>
+                <th>Object</th>
+                <th>Change Message</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.action_time }}</td>
+                <td>{{ log.user }}</td>
+                <td>
+                    {% if log.action_flag == 1 %}Added
+                    {% elif log.action_flag == 2 %}Changed
+                    {% elif log.action_flag == 3 %}Deleted
+                    {% else %}Other
+                    {% endif %}
+                </td>
+                <td>{{ log.content_type.model }}</td>
+                <td>{{ log.object_repr }}</td>
+                <td>{{ log.change_message }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

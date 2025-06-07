@@ -159,26 +159,26 @@
           <span>{{ user.username }} : {{ user.role|title }}</span>
         </a>
                 <!-- Notification Icon -->
-        <div class="dropdown ms-4">
-          <a href="#" class="text-white text-decoration-none position-relative" id="notifDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="bi bi-bell fs-5"></i>
-            <span id="notif-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">
-              0
-            </span>
-          </a>
-          <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="notifDropdown" id="notif-list" style="min-width: 280px;">
-            <!-- Dynamically loaded by JS (initial fallback) -->
-            <li><span class="dropdown-item">Loading...</span></li>
-            
-            <!-- Divider + View All link -->
-            <li><hr class="dropdown-divider"></li>
-            <li>
-              <a href="{% url 'all_notifications' %}" class="dropdown-item text-center text-primary">
-                View All Notifications
-              </a>
-            </li>
-          </ul>
-        </div>
+                <div class="dropdown ms-4">
+                  <a href="#" class="text-white text-decoration-none position-relative" id="notifDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-bell fs-5"></i>
+                    <span id="notif-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">
+                      0
+                    </span>
+                  </a>
+                  <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="notifDropdown" id="notif-list" style="min-width: 280px;">
+                    <!-- Notifications will be inserted here -->
+                    <div id="notif-items"></div>
+                
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                      <a href="{% url 'all_notifications' %}" class="dropdown-item text-center text-primary">
+                       View Old Notifications
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+                
 
 
         <div class="dropdown ms-4">
@@ -213,9 +213,11 @@
               </a>
             </li>
             <li>
+              {% if user.role in 'admin, officer' %}
               <a class="dropdown-item" href="{% url 'report_summary' %}">
                 <i class="bi bi-file me-2"></i> Generate Report
               </a>
+              {% endif %}
             </li>
             <li>
               <a class="dropdown-item" href="{% url 'password_change' %}">
@@ -224,7 +226,7 @@
             </li>
             <li>
               <a class="dropdown-item" href="{% url 'activity_logs' %}">
-                <i class="bi bi-file-earmark-text me-2"></i> Logs
+                <i class="bi bi-file-earmark-text me-2"></i> System Logs
               </a>
             </li>
             <li>
@@ -395,67 +397,74 @@
   </div>
 {% endif %}
 
-  <script>
-    function fetchNotifications() {
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const notifDropdown = document.getElementById('notifDropdown');
+    const notifCount = document.getElementById('notif-count');
+    const notifList = document.getElementById('notif-items');
+  
+    function loadNotifications() {
       fetch("{% url 'unread_notifications' %}")
         .then(response => response.json())
         .then(data => {
-          const notifCount = document.getElementById('notif-count');
-          const notifList = document.getElementById('notif-list');
-
-          // Update badge count
-          if (data.count > 0) {
-            notifCount.innerText = data.count;
-            notifCount.style.display = 'inline-block';
-          } else {
-            notifCount.style.display = 'none';
-          }
-
-          // Update notification dropdown list
           notifList.innerHTML = '';
-          if (data.notifications.length > 0) {
-            data.notifications.forEach(n => {
-              notifList.innerHTML += `
-                <li class="dropdown-item fw-bold">
-                  <a href="${n.url}" class="text-decoration-none text-dark">
-                    ${n.message.length > 80 ? n.message.slice(0, 77) + '...' : n.message}
-                    <small class="text-muted d-block">${n.created_at}</small>
-                  </a>
-                </li>
-              `;
-            });
+  
+          if (data.count === 0) {
+            notifList.innerHTML = '<li><span class="dropdown-item text-muted">No new notifications</span></li>';
+            notifCount.style.display = 'none';
           } else {
-            notifList.innerHTML = '<li><span class="dropdown-item">No notifications.</span></li>';
+            notifCount.textContent = data.count;
+            notifCount.style.display = 'inline-block';
+  
+            data.notifications.forEach(n => {
+              const li = document.createElement('li');
+              li.innerHTML = `
+                <a href="${n.url}" class="dropdown-item notification-link" data-id="${n.id}">
+                  ${n.message}<br>
+                  <small class="text-muted">${n.created_at}</small>
+                </a>
+              `;
+              notifList.appendChild(li);
+            });
           }
         });
     }
-
-    // Poll every 30 seconds
-    setInterval(fetchNotifications, 30000);
-    document.addEventListener("DOMContentLoaded", fetchNotifications);
-
-    function updateNotifList(notifs) {
-      const list = document.getElementById('notif-list');
-      list.innerHTML = '';
-      if (notifs.length === 0) {
-        list.innerHTML = '<li><span class="dropdown-item text-muted">No new notifications</span></li>';
-      } else {
-        notifs.forEach(notif => {
-          const li = document.createElement('li');
-          li.innerHTML = `<a href="${notif.url}" class="dropdown-item">${notif.text}</a>`;
-          list.appendChild(li);
+  
+    // Remove this block — DO NOT mark all read on dropdown open
+     notifDropdown.addEventListener('show.bs.dropdown', function () {
+         loadNotifications();
+  
+     });
+  
+    // Instead, load notifications when dropdown is opened (optional)
+    notifDropdown.addEventListener('show.bs.dropdown', loadNotifications);
+  
+    // Mark only clicked notification as read
+    document.addEventListener('click', function (e) {
+      const notifLink = e.target.closest('.notification-link');
+      if (notifLink) {
+        const notifId = notifLink.dataset.id;
+  
+        fetch(`/notifications/mark-as-read/${notifId}/`, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+          }
+        }).then(() => {
+          // Optionally reload notifications to update badge/count
+          loadNotifications();
         });
       }
-      // Add divider and "View All" again
-      list.innerHTML += `
-        <li><hr class="dropdown-divider"></li>
-        <li>
-          <a href="{% url 'all_notifications' %}" class="dropdown-item text-center text-primary">
-            View All Notifications
-          </a>
-        </li>`;
-    }
+    });
+  
+    // Initial load on page load
+    loadNotifications();
+  });
+  
+ 
   </script>
+  
 
   <!-- Footer -->
   <footer class="mt-auto">

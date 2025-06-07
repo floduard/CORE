@@ -3,60 +3,123 @@
 
 {% block content %}
 <div class="container my-5">
-  <div class="text-center mb-5">
+
+  <div class="text-center mb-4">
     <h2 class="fw-bold">{{ title }}</h2>
+  </div>
+
+  <!-- Date filter buttons -->
+  <div class="btn-group mb-4" role="group" aria-label="Date filters">
+    <a href="{% url 'report_summary' %}?period=today" class="btn btn-outline-primary {% if filter_period == 'today' %}active{% endif %}">To Day</a>
+    <a href="{% url 'report_summary' %}?period=last_7_days" class="btn btn-outline-primary {% if filter_period == 'last_7_days' %}active{% endif %}">Week Ago</a>
+    <a href="{% url 'report_summary' %}?period=this_month" class="btn btn-outline-primary {% if filter_period == 'this_month' %}active{% endif %}">This Month</a>
+    <a href="{% url 'report_summary' %}?period=last_month" class="btn btn-outline-primary {% if filter_period == 'last_30_days' %}active{% endif %}">Last Month</a>
+    <a href="{% url 'report_summary' %}?period=this_year" class="btn btn-outline-primary {% if filter_period == 'this_year' %}active{% endif %}">This Year</a>
+    <a href="{% url 'report_summary' %}?period=all_time" class="btn btn-outline-primary {% if filter_period == 'all_time' %}active{% endif %}">All Time</a>
   </div>
 
   {% if user.role == 'admin' %}
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4">
+
       <div class="col">
         <div class="card border-primary shadow-sm h-100">
           <div class="card-body">
-            <h5 class="card-title">👤 Total Registered Users</h5>
+            <h5 class="card-title">Total Registered Users</h5>
             <p class="card-text display-6 fw-semibold text-primary">{{ total_users }}</p>
           </div>
         </div>
       </div>
+
       <div class="col">
         <div class="card border-success shadow-sm h-100">
           <div class="card-body">
-            <h5 class="card-title">🧍 Citizens</h5>
+            <h5 class="card-title"> Citizens</h5>
             <p class="card-text display-6 fw-semibold text-success">{{ total_citizens }}</p>
           </div>
         </div>
       </div>
+
       <div class="col">
         <div class="card border-info shadow-sm h-100">
           <div class="card-body">
-            <h5 class="card-title">👮 Officers</h5>
+            <h5 class="card-title"> Officers</h5>
             <p class="card-text display-6 fw-semibold text-info">{{ total_officers }}</p>
           </div>
         </div>
       </div>
+
+      <div class="col">
+        <div class="card border-secondary shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title"> Admins</h5>
+            <p class="card-text display-6 fw-semibold text-secondary">{{ total_admins }}</p>
+          </div>
+        </div>
+      </div>
+
       <div class="col">
         <div class="card border-warning shadow-sm h-100">
           <div class="card-body">
-            <h5 class="card-title">📄 Total Reported Case</h5>
+            <h5 class="card-title">Total Reported Cases</h5>
             <p class="card-text display-6 fw-semibold text-warning">{{ total_reports }}</p>
           </div>
         </div>
       </div>
+
       <div class="col">
-        <div class="card border-secondary shadow-sm h-100">
+        <div class="card border-success shadow-sm h-100">
           <div class="card-body">
-            <h5 class="card-title">🕒 Recent Cases</h5>
-            <p class="card-text display-6 fw-semibold text-secondary">{{ recent_reports }}</p>
+            <h5 class="card-title">Closed cases</h5>
+            <p class="card-text display-6 fw-semibold text-success">{{ closed_reports }}</p>
           </div>
         </div>
       </div>
+
+      <div class="col">
+        <div class="card border-warning shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title">cases Under Investigation</h5>
+            <p class="card-text display-6 fw-semibold text-warning">{{ under_investigation }}</p>
+          </div>
+        </div>
+      </div>
+
       <div class="col">
         <div class="card border-danger shadow-sm h-100">
           <div class="card-body">
-            <h5 class="card-title">🗂️ Assigned Cases</h5>
+            <h5 class="card-title">Assigned cases</h5>
             <p class="card-text display-6 fw-semibold text-danger">{{ assigned_reports }}</p>
           </div>
         </div>
       </div>
+
+      <div class="col">
+        <div class="card border-danger shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title">Unassigned cases</h5>
+            <p class="card-text display-6 fw-semibold text-danger">{{ unassigned_reports }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="card border-dark shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title">Total Suspects</h5>
+            <p class="card-text display-6 fw-semibold text-dark">{{ total_suspects }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="card border-secondary shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title">Total Evidence Items</h5>
+            <p class="card-text display-6 fw-semibold text-secondary">{{ total_evidence }}</p>
+          </div>
+        </div>
+      </div>
+
     </div>
 
   {% elif user.role == 'officer' %}
@@ -64,7 +127,7 @@
       <div class="col">
         <div class="card shadow border-primary">
           <div class="card-body">
-            <h5 class="card-title">📂 Assigned Reports</h5>
+            <h5 class="card-title">Assigned Cases</h5>
             <p class="card-text display-6 fw-semibold text-primary">{{ total_assigned }}</p>
           </div>
         </div>
@@ -72,7 +135,7 @@
       <div class="col">
         <div class="card shadow border-success">
           <div class="card-body">
-            <h5 class="card-title">✅ Closed Cases</h5>
+            <h5 class="card-title">Closed Cases</h5>
             <p class="card-text display-6 fw-semibold text-success">{{ closed_cases }}</p>
           </div>
         </div>
@@ -81,7 +144,7 @@
 
     <div class="card shadow mb-4">
       <div class="card-body">
-        <h5 class="card-title mb-3">📋 Recent Cases Status </h5>
+        <h5 class="card-title mb-3">Recent Cases Status</h5>
         <table class="table table-hover">
           <thead class="table-light">
             <tr>
@@ -107,17 +170,19 @@
   {% endif %}
 
   <div class="text-center mt-4">
-    <a href="?format=pdf" class="btn btn-danger me-2"><i class="bi bi-file-earmark-pdf-fill"></i> Download PDF</a>
-    <a href="?format=csv" class="btn btn-success me-2"><i class="bi bi-file-earmark-spreadsheet-fill"></i> Download CSV</a>
+    <a href="{% url 'report_summary' %}?format=pdf&period={{ filter_period }}" class="btn btn-danger me-2">
+      <i class="bi bi-file-earmark-pdf-fill"></i> Download PDF
+    </a>
+    <a href="{% url 'report_summary' %}?format=csv&period={{ filter_period }}" class="btn btn-success me-2">
+      <i class="bi bi-file-earmark-spreadsheet-fill"></i> Download CSV
+    </a>
 
-   {%  if user.role == 'admin'%}
+    {% if user.role == 'admin' %}
       <a href="https://wa.me/?text={{ summary_message|urlencode }}" target="_blank" class="btn btn-success me-2">
         <i class="bi bi-whatsapp"></i> Send via WhatsApp
       </a>
-      <a href="mailto:?subject=Report Summary&body={{ summary_message|urlencode }}" class="btn btn-primary">
-        <i class="bi bi-envelope-fill"></i> Send via Email
-      </a>
     {% endif %}
   </div>
+
 </div>
 {% endblock %}

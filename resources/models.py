@@ -20,7 +20,7 @@ class Resource(models.Model):
     link = models.URLField(blank=True, null=True)
 
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE)
-    date_uploaded = models.DateTimeField(auto_now_add=True)  # ✅ Ensure this exists
+    date_uploaded = models.DateTimeField(auto_now_add=True)  
 
     def __str__(self):
         return self.name

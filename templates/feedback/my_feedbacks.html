@@ -1,32 +1,47 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container mt-5">
-  <h4>My Feedback</h4>
-  <table class="table table-hover">
-    <thead>
-      <tr>
-        <th>Message</th>
-        <th>Submitted At</th>
-        <th>Admin Reply</th>
-        <th>Replied At</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for fb in feedbacks %}
-      <tr>
-        <td>{{ fb.message }}</td>
-        <td>{{ fb.submitted_at|date:"Y-m-d H:i" }}</td>
-        <td>{% if fb.admin_reply %}{{ fb.admin_reply }}{% else %}<span class="text-muted">No reply yet</span>{% endif %}</td>
-        <td>{% if fb.replied_at %}{{ fb.replied_at|date:"Y-m-d H:i" }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="4" class="text-muted">You have not submitted any feedback.</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <h4 class="mb-4">Help Center ?</h4>
+  <div class="table-responsive shadow-sm rounded">
+    <table class="table table-hover align-middle mb-3">
+      <thead class="table-light">
+        <tr>
+          <th>Message</th>
+          <th>Submitted At</th>
+          <th>Admin Reply</th>
+          <th>Replied At</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fb in feedbacks %}
+        <tr>
+          <td style="max-width: 350px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ fb.message }}">{{ fb.message }}</td>
+          <td>{{ fb.submitted_at|date:"M d, Y H:i" }}</td>
+          <td style="max-width: 350px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ fb.admin_reply|default:'' }}">
+            {% if fb.admin_reply %}
+              {{ fb.admin_reply }}
+            {% else %}
+              <span class="text-muted fst-italic">No reply yet</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if fb.replied_at %}
+              {{ fb.replied_at|date:"M d, Y H:i" }}
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" class="text-center text-muted fst-italic">You have not submitted any feedback.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
   <a href="{% url 'submit_feedback' %}" class="btn btn-primary shadow-sm">
-    <i class="bi bi-send">Submit </a>
+    <i class="bi bi-send me-1"></i> Submit Feedback/request
+  </a>
 </div>
 {% endblock %}

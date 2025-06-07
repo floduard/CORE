@@ -684,7 +684,7 @@ def delete_additional_evidence(request, evidence_id):
 @user_passes_test(lambda u: u.role == 'admin')  # Only admin can assign
 def assign_to_officer(request, report_id):
     report = get_object_or_404(CybercrimeReport, id=report_id)
-    
+    case = get_object_or_404(CybercrimeReport, pk=report_id)
     if request.method == 'POST':
         officer_id = request.POST.get('officer_id')
         if officer_id:
@@ -692,6 +692,14 @@ def assign_to_officer(request, report_id):
             report.assignee = officer
             report.save()
             messages.success(request, f"Assigned to Officer {officer.get_full_name()}")
+            CaseAssignmentHistory.objects.create(
+                case=case,
+                assigned_by=request.user,
+                assigned_to=officer
+            )
+
+            messages.success(request, "Case assigned successfully.")
+            return redirect('report_detail', pk=case.pk)
         else:
             messages.error(request, "No officer selected.")
     
@@ -709,6 +717,15 @@ def add_suspect(request, pk):
             suspect.case_report = case
             suspect.added_by = request.user
             suspect.save()
+            ActivityLog.objects.create(
+                user=request.user,
+                action=f"Suspect has been added on {case.tracking_id}"
+            )
+            notify_user(
+                        recipient=request.user,
+                        message=f"New Suspect Added: {case.tracking_id}.",
+                        url=reverse('report_detail', args=[case.pk])
+                    )
     return redirect('report_detail', pk=pk)
 
 
