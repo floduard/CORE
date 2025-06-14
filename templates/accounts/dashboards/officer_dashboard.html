@@ -4,55 +4,78 @@
 
 {% block content %}
 <div class="container-fluid mt-4">
-  <h4 class="text-center fw-bold">Reported Case OverView</h4>
+  <h4 class="text-center fw-bold">Reported Case Overview</h4>
   <br>
   <div class="row text-white">
     {% for stat in stats %}
-    <div class="col-md-3 col-sm-6 mb-4">
-      <div class="card shadow border-0"
-           style="
-             {% if stat.title == 'Total Reported Cases' %}
-               background: linear-gradient(to right, #0cb09a, #94f93d);
-             {% elif stat.title == 'Pending Cases' %}
-               background: linear-gradient(to right, #f7971e, #ffd200);
-             {% elif stat.title == 'Cases Under Investigation' %}
-               background: linear-gradient(to right, #36d1dc, #5b86e5);
-             {% elif stat.title == 'Closed' %}
-               background: linear-gradient(to right, #434343, #000000);
-             {% elif stat.title == 'Recent Reported Cases' %}
-               background: linear-gradient(to right, #e96443, #904e95);
-             {% elif stat.title == 'Irrelevant Cases' %}
-               background: linear-gradient(to right, #ff512f, #dd2476);
-             {% elif stat.title == 'Resolved Cases' %}
-               background: linear-gradient(to right, #00b09b, #96c93d);
-             {% elif stat.title == 'Critical Cases' %}
-               background: linear-gradient(to right, #ff416c, #ff4b2b);
-             {% elif stat.title == 'Most Reported Crime' %}
-               background: linear-gradient(to right, #56ab2f, #a8e063);
-             {% elif stat.title == 'High Rated Zone' %}
-               background: linear-gradient(to right, #1f4037, #99f2c8);
-             {% else %}
-               background: linear-gradient(to right, #667eea, #764ba2);
-             {% endif %}
-             border-radius: 1rem;">
+      <div class="col-md-3 col-sm-6 mb-4">
+        <div class="card shadow border-0"
+          style="
+              {% if stat.title == 'Total Reported Cases' %}
+                background: linear-gradient(to right, #0cb09a, #94f93d);
+              {% elif stat.title == 'Pending Cases' %}
+                background: linear-gradient(to right, #f7971e, #ffd200);
+              {% elif stat.title == 'Cases Under Investigation' %}
+                background: linear-gradient(to right, #36d1dc, #5b86e5);
+              {% elif stat.title == 'Closed Cases' %}
+                background: linear-gradient(to right, #434343, #000000);
+              {% elif stat.title == 'Recent Reported Cases' %}
+                background: linear-gradient(to right, #e96443, #904e95);
+              {% elif stat.title == 'Irrelevant Cases' %}
+                background: linear-gradient(to right, #ff512f, #dd2476);
+              {% elif stat.title == 'Cases Resolved' %}
+                background: linear-gradient(to right, #FFC107, #000000);
+              {% elif stat.title == 'Critical Cases' %}
+                background: linear-gradient(to right, #fff16c, #ff4bbb);
+              {% elif stat.title == 'Most Reported Crime' %}
+                background: linear-gradient(to right, #56ab2f, #a8e063);
+              {% elif stat.title == 'High Rated Zone' %}
+                background: linear-gradient(to right, #1f4037, #99f2c8);
+              {% else %}
+                background: linear-gradient(to right, #667eea, #764ba2);
+              {% endif %}
+              border-radius: 1rem;">
         <a href="{{ stat.link }}" class="text-decoration-none">
           <div class="card-body text-center text-white">
             <h6 class="card-title fw-semibold">{{ stat.title }}</h6>
             <h3 class="fw-bold">{{ stat.value }}</h3>
           </div>
         </a>
-      </div>
-    </div>
+  </div>
+  </div>
   {% endfor %}
-  
   </div>
 
+  <!-- Filters -->
+  <div class="text-center mt-4 mb-2">
+    <strong>Month:</strong>
+    <a href="{% url 'dashboard' %}" class="btn btn-sm {% if not selected_month %}btn-primary{% else %}btn-outline-primary{% endif %}">All</a>
+    {% for month in month_choices %}
+      <a href="?month={{ month.value }}{% if selected_year %}&year={{ selected_year }}{% endif %}"
+         class="btn btn-sm {% if selected_month == month.value %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        {{ month.name }}
+      </a>
+    {% endfor %}
+  </div>
+
+  <div class="text-center mb-4">
+    <strong>Filter by Year:</strong>
+    {% for y in year_choices %}
+      <a href="?year={{ y }}{% if selected_month %}&month={{ selected_month }}{% endif %}"
+         class="btn btn-sm {% if selected_year|stringformat:"s" == y|stringformat:"s" %}btn-success{% else %}btn-outline-success{% endif %}">
+        {{ y }}
+      </a>
+    {% endfor %}
+  </div>
+
+  <!-- Crime Chart -->
   <div class="mt-5 text-center">
-    <h5 class="text-success fw-bold">Crime Trends Over the Last Year</h5>
+    <h5 class="text-success fw-bold">CyberCrimes Variation Over Months</h5>
     <canvas id="crimeChart" style="max-height: 300px;"></canvas>
   </div>
 </div>
 
+<!-- Pie Charts -->
 <div class="row mt-4">
   <div class="col-md-6">
     <div class="card shadow">
@@ -67,12 +90,13 @@
     <div class="card shadow">
       <div class="card-header">Case Priority Distribution</div>
       <div class="card-body">
-        <canvas id="priorityPie" width="250" height="250" ></canvas>
+        <canvas id="priorityPie" width="250" height="250"></canvas>
       </div>
     </div>
   </div>
 </div>
 
+<!-- Recent Activities -->
 <div class="card mt-4">
   <div class="card-header bg-primary text-white">
     Recent Activities
@@ -88,6 +112,7 @@
     {% endfor %}
   </ul>
 </div>
+
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -114,49 +139,45 @@
           suggestedMax: 10
         }
       }
-      
     }
   });
 
-  // Status Pie Chart
   const statusCtx = document.getElementById('statusPie').getContext('2d');
   const statusPie = new Chart(statusCtx, {
-      type: 'pie',
-      data: {
-          labels: {{ status_labels|safe }},
-          datasets: [{
-              label: 'Case Status',
-              data: {{ status_data|safe }},
-              backgroundColor: [
-                  '#FF6384', '#36A2EB', '#FFCE56', '#8BC34A', '#FF9800', '#9C27B0', '#795548'
-              ]
-          }]
-      },
-      options: {
-          responsive: true,
-          maintainAspectRatio: false  // This allows custom size
-      }
-      
+    type: 'pie',
+    data: {
+      labels: {{ status_labels|safe }},
+      datasets: [{
+        label: 'Case Status',
+        data: {{ status_data|safe }},
+        backgroundColor: [
+          '#FF6384', '#36A2EB', '#FFCE56', '#8BC34A', '#FF9800', '#9C27B0', '#795548'
+        ]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false
+    }
   });
 
-  // Priority Pie Chart
   const priorityCtx = document.getElementById('priorityPie').getContext('2d');
   const priorityPie = new Chart(priorityCtx, {
-      type: 'pie',
-      data: {
-          labels: {{ priority_labels|safe }},
-          datasets: [{
-              label: 'Case Priority',
-              data: {{ priority_data|safe }},
-              backgroundColor: [
-                  '#03A9F4', '#4CAF50', '#FFC107', '#F44336'
-              ]
-          }]
-      },
-      options: {
-          responsive: true,
-          maintainAspectRatio: false  // This allows custom size
-      }
+    type: 'pie',
+    data: {
+      labels: {{ priority_labels|safe }},
+      datasets: [{
+        label: 'Case Priority',
+        data: {{ priority_data|safe }},
+        backgroundColor: [
+          '#03A9F4', '#4CAF50', '#FFC107', '#F44336'
+        ]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false
+    }
   });
 </script>
 {% endblock %}

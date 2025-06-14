@@ -48,6 +48,10 @@ from django.conf import settings
 import csv
 from io import BytesIO
 from reportlab.pdfgen import canvas
+from calendar import month_name
+from collections import defaultdict
+from django.db.models.functions import ExtractMonth, ExtractYear
+
 
 
 def officer_required(view_func):
@@ -237,19 +241,22 @@ def logout_view(request):
 
 
 
-
-
 @login_required
 def role_based_dashboard(request):
     user = request.user
+    reports = CybercrimeReport.objects.all() if user.role in ['officer', 'admin'] else CybercrimeReport.objects.filter(user=user)
 
-    if user.role in ['officer', 'admin']:
-        reports = CybercrimeReport.objects.all()
-    else:
-        reports = CybercrimeReport.objects.filter(user=user)
+    # Filtering
+    selected_month = request.GET.get('month')
+    selected_year = request.GET.get('year')
+    year_queryset = reports.exclude(date__isnull=True).annotate(year=ExtractYear('date')).values_list('year', flat=True).distinct()
+    year_choices = sorted(set(year_queryset), reverse=True) 
+    if selected_month:
+        reports = reports.filter(date__month=selected_month)
+    if selected_year:
+        reports = reports.filter(date__year=selected_year)
 
-       
-
+    # Stats
     total_reports = reports.count()
     report_link = reverse("all_reports") if user.role in ['admin', 'officer'] else reverse("my_reports")
     recent_reports = reports.filter(submitted_at__gte=now() - timedelta(days=7)).count()
@@ -259,12 +266,13 @@ def role_based_dashboard(request):
     resolved_cases = reports.filter(status='resolved').count()
     closed_cases = reports.filter(status='closed').count()
     critical_cases_count = reports.filter(priority='critical').count()
+
     most_common = (
-    reports.values('crime_type')
-    .annotate(count=Count('crime_type'))
-    .order_by('-count')
-    .first()
-)
+            reports.values('crime_type')
+            .annotate(count=Count('crime_type'))
+            .order_by('-count')
+            .first()
+        )
 
     if most_common:
             most_reported_crime = reports.filter(crime_type=most_common['crime_type'])
@@ -273,15 +281,15 @@ def role_based_dashboard(request):
             most_reported_crime = None
             crime_stat_label = "N/A"
     # Most frequent crime type
-      
 
-    # Most affected zone (province/city)
     top_zone = reports.values('province_city').annotate(count=Count('province_city')).order_by('-count').first()
     top_zone_name = top_zone['province_city'] if top_zone else 'N/A'
 
-    # Monthly trend stats
+    # Chart data
     months = ["May", "June", "July", "August", "September", "October",
               "November", "December", "January", "February", "March", "April"]
+    month_order = [5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4]
+
     monthly_data = (
         reports.exclude(date__isnull=True)
         .annotate(month=ExtractMonth('date'))
@@ -289,48 +297,55 @@ def role_based_dashboard(request):
         .annotate(count=Count('id'))
     )
     counts_dict = {item['month']: item['count'] for item in monthly_data}
-    month_order = [5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4]
-    counts = [counts_dict.get(month, 0) for month in month_order]
+    chart_data = [counts_dict.get(month, 0) for month in month_order]
 
-    # Status and priority chart data
     status_labels = [label for _, label in CybercrimeReport.STATUS_CHOICES]
     status_counts = [reports.filter(status=code).count() for code, _ in CybercrimeReport.STATUS_CHOICES]
 
     priority_labels = [label for _, label in CybercrimeReport.PRIORITY_CHOICES]
     priority_counts = [reports.filter(priority=code).count() for code, _ in CybercrimeReport.PRIORITY_CHOICES]
 
-
     stats = [
         {"title": "Total Reported Cases", "value": total_reports, "link": report_link},
         {"title": "Pending Cases", "value": pending_cases, "link": reverse("pending_cases")},
-        {"title": "Cases Under Investigation", "value": under_investigation, "link": reverse("investigating_cases")},       
+        {"title": "Cases Under Investigation", "value": under_investigation, "link": reverse("investigating_cases")},
         {"title": "Cases Resolved", "value": resolved_cases, "link": reverse("resolved_cases")},
         {"title": "Closed Cases", "value": closed_cases, "link": reverse("closed_cases")},
         {"title": "Recent Reported Cases", "value": recent_reports, "link": reverse("recent_reports")},
         {"title": "Irrelevant Cases", "value": irrelevant_cases, "link": reverse("irrelevant_cases")},
         {"title": "Critical Cases", "value": critical_cases_count, "link": reverse("critical_cases")},
-        {"title": "Most Reported Crime", "value": crime_stat_label, "link":reverse("most_reported_crime")},
+        {"title": "Most Reported Crime", "value": crime_stat_label, "link": reverse("most_reported_crime")},
         {"title": "High Rated Zone", "value": top_zone_name, "link": reverse("top_zones")},
     ]
-    recent_activities = [] 
-    if request.user.role == 'admin':
-            recent_activities = ActivityLog.objects.all().order_by('-timestamp')[:5]           
 
-    elif request.user.role == 'officer':
-            recent_activities = ActivityLog.objects.filter(user=request.user)[:5]           
+    if user.role == 'admin':
+        recent_activities = ActivityLog.objects.all().order_by('-timestamp')[:5]
+    else:
+        recent_activities = ActivityLog.objects.filter(user=user)[:5]
 
-    elif request.user.role == 'citizen':
-            recent_activities = ActivityLog.objects.filter(user=request.user)[:5]
+    # Month and Year filter data
+    month_choices = [{'value': str(i), 'name': month_name[i][:3]} for i in range(1, 13)]
+    year_choices = sorted(
+        CybercrimeReport.objects.exclude(date__isnull=True)
+        .annotate(year=ExtractYear('date'))
+        .values_list('year', flat=True)
+        .distinct(),
+        reverse=True
+    )
 
     context = {
         'stats': stats,
         'chart_labels': months,
-        'chart_data': counts,
+        'chart_data': chart_data,
         'status_labels': status_labels,
         'status_data': status_counts,
         'priority_labels': priority_labels,
         'priority_data': priority_counts,
-        'recent_activities':recent_activities,
+        'recent_activities': recent_activities,
+        'month_choices': month_choices,
+        'selected_month': selected_month,
+        'year_choices': year_choices,
+        'selected_year': selected_year,
     }
 
     if user.role == 'admin':

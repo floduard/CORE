@@ -4,8 +4,36 @@
 
 {% block content %}
 <div class="container-fluid mt-4">
-  <h4 class="text-center fw-bold">My Reported Case OverView</h4>
+  <h4 class="text-center fw-bold">My Reported Case Overview</h4>
   <br>
+
+  <!-- FILTER SECTION -->
+  <form method="get" class="row justify-content-center mb-4">
+    <div class="col-auto">
+      <div class="input-group">
+        <label class="input-group-text bg-success text-white" for="year-select">Year</label>
+        <select class="form-select" name="year" id="year-select" onchange="this.form.submit()">
+          <option value="">All</option>
+          {% for y in year_choices %}
+            <option value="{{ y }}" {% if selected_year|stringformat:"s" == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="text-center mt-4 mb-2">
+      <strong>Month:</strong>
+      <a href="{% url 'dashboard' %}" class="btn btn-sm {% if not selected_month %}btn-primary{% else %}btn-outline-primary{% endif %}">All</a>
+      {% for month in month_choices %}
+        <a href="?month={{ month.value }}{% if selected_year %}&year={{ selected_year }}{% endif %}"
+           class="btn btn-sm {% if selected_month == month.value %}btn-primary{% else %}btn-outline-primary{% endif %}">
+          {{ month.name }}
+        </a>
+      {% endfor %}
+    </div>
+
+    
+  <!-- STATISTICS CARDS -->
   <div class="row text-white">
     {% for stat in stats %}
     <div class="col-md-3 col-sm-6 mb-4">
@@ -17,16 +45,16 @@
                background: linear-gradient(to right, #f7971e, #ffd200);
              {% elif stat.title == 'Cases Under Investigation' %}
                background: linear-gradient(to right, #36d1dc, #5b86e5);
-             {% elif stat.title == 'Closed' %}
+             {% elif stat.title == 'Closed Cases' %}
                background: linear-gradient(to right, #434343, #000000);
              {% elif stat.title == 'Recent Reported Cases' %}
                background: linear-gradient(to right, #e96443, #904e95);
              {% elif stat.title == 'Irrelevant Cases' %}
                background: linear-gradient(to right, #ff512f, #dd2476);
-             {% elif stat.title == 'Resolved Cases' %}
-               background: linear-gradient(to right, #00b09b, #96c93d);
+             {% elif stat.title == 'Cases Resolved' %}
+               background: linear-gradient(to right, #FFC107, #000000);
              {% elif stat.title == 'Critical Cases' %}
-               background: linear-gradient(to right, #ff416c, #ff4b2b);
+               background: linear-gradient(to right, #fff16c, #ff4bbb);
              {% elif stat.title == 'Most Reported Crime' %}
                background: linear-gradient(to right, #56ab2f, #a8e063);
              {% elif stat.title == 'High Rated Zone' %}
@@ -43,31 +71,33 @@
         </a>
       </div>
     </div>
-  {% endfor %}
-  
+    {% endfor %}
   </div>
 
+  <!-- CHART -->
   <div class="mt-5 text-center">
     <h5 class="text-success fw-bold">Crime Trends Over the Last Months</h5>
     <canvas id="crimeChart" style="max-height: 300px;"></canvas>
   </div>
+
+  <!-- RECENT ACTIVITY -->
+  <div class="card mt-4">
+    <div class="card-header bg-primary text-white">
+      Recent Activities
+    </div>
+    <ul class="list-group list-group-flush">
+      {% for recent_activity in recent_activities %}
+        <li class="list-group-item">
+          <strong>{{ recent_activity.user }}</strong>: {{ recent_activity.action }} 
+          <span class="text-muted float-end">{{ recent_activity.timestamp|date:"Y-m-d H:i" }}</span>
+        </li>
+      {% empty %}
+        <li class="list-group-item text-muted">No recent activity found.</li>
+      {% endfor %}
+    </ul>
+  </div>
 </div>
 
-<div class="card mt-4">
-  <div class="card-header bg-primary text-white">
-    Recent Activities
-  </div>
-  <ul class="list-group list-group-flush">
-    {% for recent_activity in recent_activities %}
-      <li class="list-group-item">
-        <strong>{{ recent_activity.user }}</strong>: {{ recent_activity.action }} 
-        <span class="text-muted float-end">{{ recent_activity.timestamp|date:"Y-m-d H:i" }}</span>
-      </li>
-    {% empty %}
-      <li class="list-group-item text-muted">No recent activity found.</li>
-    {% endfor %}
-  </ul>
-</div>
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
