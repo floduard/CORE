@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="card shadow rounded">
+    <div class="card-header">
+      <h4 class="mb-0">Multi-Factor Authentication Setup</h4>
+    </div>
+    <div class="card-body">
+
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      {% if not mfa.is_enabled %}
+        <form method="POST">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label">Select MFA Method:</label>
+            <select name="method" onchange="this.form.submit()" class="form-select">
+              <option value="qrcode" {% if mfa.method == 'qrcode' %}selected{% endif %}>Authenticator App (QR Code)</option>
+              <option value="email" {% if mfa.method == 'email' %}selected{% endif %}>Email Code</option>
+            </select>
+          </div>
+        </form>
+
+        {% if mfa.method == 'qrcode' %}
+          <div class="mb-3">
+            <p>Scan this QR code with your authenticator app:</p>
+            <img src="data:image/png;base64,{{ qr_code_b64 }}" alt="QR Code" class="img-thumbnail" style="max-width: 200px;">
+          </div>
+          <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="method" value="qrcode">
+            <div class="mb-3">
+              <label class="form-label">Enter code from app:</label>
+              <input type="text" name="token" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Enable MFA</button>
+          </form>
+        {% elif mfa.method == 'email' %}
+          {% if not mfa.email_code %}
+            <p>A code has been sent to <strong>{{ request.user.email }}</strong>.</p>
+          {% endif %}
+          <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="method" value="email">
+            <div class="mb-3">
+              <label class="form-label">Enter verification code:</label>
+              <input type="text" name="token" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Verify & Enable</button>
+          </form>
+        {% endif %}
+
+      {% else %}
+        <div class="alert alert-success">
+          MFA is currently <strong>enabled</strong> using <strong>{{ mfa.get_method_display }}</strong>.
+        </div>
+
+        <!-- Change Method -->
+        <form method="POST" action="{% url 'mfa_choose_method' %}" class="mb-3">
+          {% csrf_token %}
+          <label for="mfa_method" class="form-label">Change Method:</label>
+          <select name="method" id="mfa_method" class="form-select d-inline w-auto">
+            {% for method, label in mfa.available_methods %}
+              <option value="{{ method }}" {% if method == mfa.method %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn btn-outline-secondary btn-sm ms-2">Update</button>
+        </form>
+
+        <!-- Update MFA Email -->
+        <form method="POST" action="{% url 'mfa_update_email' %}" class="mb-3">
+          {% csrf_token %}
+          <label class="form-label">Update MFA Email:</label>
+          <div class="input-group">
+            <input type="email" name="email" value="{{ mfa.email|default:request.user.email }}" class="form-control" required>
+            <button type="submit" class="btn btn-outline-secondary btn-sm">Update Email</button>
+          </div>
+        </form>
+
+        <!-- Disable MFA -->
+        <form method="POST" action="{% url 'mfa_disable' %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger mt-2">Disable MFA</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

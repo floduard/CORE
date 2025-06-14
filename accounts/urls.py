@@ -50,7 +50,18 @@ urlpatterns = [
 
 
 
-    # statistics redirect
+    # MFA URLs
+    path('accounts/mfa/setup/', views.mfa_setup, name='mfa_setup'),
+    path('accounts/mfa/disable/', views.mfa_disable, name='mfa_disable'),
+    path('accounts/mfa/update-email/', views.mfa_update_email, name='mfa_update_email'),
+    path('accounts/mfa/choose-method/', views.mfa_choose_method, name='mfa_choose_method'),
+    
+    path('accounts/mfa/verify/', views.mfa_verify, name='mfa_verify'),
+    path('accounts/mfa/resend/', views.mfa_resend, name='mfa_resend'),
+    path('accounts/mfa/status/', views.mfa_status, name='mfa_status'),
+
+
+
 
    
 ]

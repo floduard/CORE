@@ -58,7 +58,32 @@ class Notification(models.Model):
 class ActivityLog(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     action = models.CharField(max_length=255)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-timestamp']
+
+
+
+class UserMFA(models.Model):
+    METHOD_CHOICES = [
+        ('qrcode', 'Authenticator App (QR Code)'),
+        ('email', 'Email Code'),
+    ]
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    is_enabled = models.BooleanField(default=False)
+    method = models.CharField(max_length=10, choices=METHOD_CHOICES, default='qrcode')
+    secret = models.CharField(max_length=32, blank=True, null=True)
+    email_code = models.CharField(max_length=6, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    email = models.EmailField(blank=True, null=True)
+    email_code_created = models.DateTimeField(blank=True, null=True)  # NEW
+
+    def available_methods(self):
+        return self.METHOD_CHOICES
+    def __str__(self):
+        return f"MFA for {self.user.username}"
+

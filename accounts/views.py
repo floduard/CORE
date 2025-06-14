@@ -163,54 +163,62 @@ def add_user(request):
     return render(request, 'accounts/admin/add_user.html', {'form': form})
 
 
+from django.contrib.sessions.backends.base import SessionBase
+from django.shortcuts import redirect
+from django.urls import reverse
+
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect('dashboard')  # already logged in
+        return redirect('dashboard')
 
     if request.method == 'POST':
-        # 1. Verify reCAPTCHA first
+        # 1. Verify reCAPTCHA
         recaptcha_response = request.POST.get('g-recaptcha-response')
         data = {
-            'secret': settings.RECAPTCHA_SECRET_KEY,  # add this to your settings
+            'secret': settings.RECAPTCHA_SECRET_KEY,
             'response': recaptcha_response
         }
         recaptcha_verify = requests.post('https://www.google.com/recaptcha/api/siteverify', data=data)
-        result = recaptcha_verify.json()
-        if not result.get('success'):
+        if not recaptcha_verify.json().get('success'):
             messages.error(request, 'Invalid reCAPTCHA. Please try again.')
             return render(request, 'accounts/login.html')
-        
-        # 2. Continue with your login logic
-        login_input = request.POST['username']  # this can be username or email
-        password = request.POST['password']
-        # First try username authentication
-        user = authenticate(request, username=login_input, password=password)
 
+        login_input = request.POST['username']
+        password = request.POST['password']
+
+        # Try username or email
+        user = authenticate(request, username=login_input, password=password)
         if user is None:
-            # If failed, try to find user by email and authenticate by username
             try:
                 user_obj = User.objects.get(email=login_input)
                 user = authenticate(request, username=user_obj.username, password=password)
             except User.DoesNotExist:
                 user = None
 
-        if user is not None:
+        if user:
             if not user.is_active:
-                messages.error(request, 'Your account is disabled. Please contact the administrator.')
+                messages.error(request, 'Your account is disabled.')
                 return render(request, 'accounts/login.html')
-            
+
+            # MFA check
+            try:
+                mfa = user.usermfa
+                if mfa.is_enabled:
+                    # Temporarily store user.id in session to verify MFA
+                    request.session['pre_mfa_user_id'] = user.id
+                    return redirect('mfa_verify')  # redirect to MFA token input view
+            except UserMFA.DoesNotExist:
+                pass  # No MFA enabled, continue
+
+            # Login if MFA not enabled
             login(request, user)
-            ActivityLog.objects.create(
-                user=request.user,
-                action=f"User {user} Logged in",
-            )
-            # Redirect based on role
+            ActivityLog.objects.create(user=user, action=f"User {user} logged in.")
             if user.role == 'admin':
-                return redirect('dashboard')  # admin dashboard
+                    return redirect('dashboard')  # admin dashboard
             elif user.role == 'officer':
-                return redirect('dashboard')  # officer dashboard
+                    return redirect('dashboard')  # officer dashboard
             else:
-                return redirect('dashboard')  # citizen dashboard
+                    return redirect('dashboard')  # citizen dashboard
         else:
             messages.error(request, 'Invalid username/email or password.')
 
@@ -685,3 +693,241 @@ def admin_update_user_view(request, user_id):
             'skip_fields': skip_fields,  # Pass skip_fields to template
         }
     )
+
+
+
+import pyotp
+import random
+from django.core.mail import send_mail
+from django.conf import settings
+import pyotp, random, qrcode, io, base64
+
+@login_required
+def mfa_setup(request):
+    mfa, _ = UserMFA.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        method = request.POST.get('method')
+        token = request.POST.get('token')
+
+        if method:
+            mfa.method = method
+
+            if method == 'qrcode':
+                if not mfa.secret:
+                    mfa.secret = pyotp.random_base32()
+                otp = pyotp.TOTP(mfa.secret)
+
+                if token:
+                    if otp.verify(token):
+                        mfa.is_enabled = True
+                        mfa.save()
+                        request.session.flush()           # clear any pre-MFA session data
+                        login(request, request.user)
+                        messages.success(request, "MFA enabled using Authenticator App.")
+                        return redirect(reverse('mfa_setup') + '?status=enabled')
+                    else:
+                        messages.error(request, "Invalid code from app.")
+                else:
+                    mfa.save()
+                    request.session.flush()           # clear any pre-MFA session data
+                    login(request, request.user)
+                    messages.info(request, "Scan the QR code and enter the code to enable MFA.")
+
+            elif method == 'email':
+                if token:
+                    if token == mfa.email_code:
+                        mfa.is_enabled = True
+                        mfa.save()
+                        messages.success(request, "MFA enabled via email.")
+                        return redirect(reverse('mfa_setup') + '?status=enabled')
+                    else:
+                        messages.error(request, "Invalid email verification code.")
+                else:
+                    # Generate and send email code
+                    mfa.email_code = f"{random.randint(100000, 999999)}"
+                    mfa.save()
+                    send_mail(
+                        'Your MFA Verification Code',
+                        f'Your verification code is: {mfa.email_code}',
+                        settings.DEFAULT_FROM_EMAIL,
+                        [mfa.email or request.user.email],
+                    )
+                    messages.info(request, "Verification code sent to your email.")
+
+    # Generate QR code
+    qr_code_b64 = None
+    if mfa.method == 'qrcode':
+        otp = pyotp.TOTP(mfa.secret or pyotp.random_base32())
+        mfa.secret = otp.secret
+        uri = otp.provisioning_uri(name=request.user.email, issuer_name="YourAppName")
+        qr = qrcode.make(uri)
+        buffer = io.BytesIO()
+        qr.save(buffer, format='PNG')
+        qr_code_b64 = base64.b64encode(buffer.getvalue()).decode()
+        mfa.save()
+
+    return render(request, 'mfa/setup.html', {
+        'mfa': mfa,
+        'qr_code_b64': qr_code_b64,
+    })
+
+
+@login_required
+def mfa_disable(request):
+    if request.method == 'POST':
+        mfa = UserMFA.objects.filter(user=request.user).first()
+        if mfa:
+            mfa.is_enabled = False
+            mfa.secret = ""
+            mfa.email_code = ""
+            mfa.save()
+            messages.success(request, "MFA has been disabled.")
+    return redirect('mfa_status')
+
+
+@login_required
+def mfa_choose_method(request):
+    if request.method == 'POST':
+        method = request.POST.get('method')
+        mfa, _ = UserMFA.objects.get_or_create(user=request.user)
+        if method in dict(UserMFA.METHOD_CHOICES).keys():
+            mfa.method = method
+            mfa.is_enabled = False
+            mfa.secret = ""
+            mfa.email_code = ""
+            mfa.save()
+            messages.info(request, f"Method changed to {method}. Please re-enable MFA.")
+    return redirect('mfa_status')
+
+
+@login_required
+def mfa_update_email(request):
+    if request.method == 'POST':
+        new_email = request.POST.get('email')
+        mfa, _ = UserMFA.objects.get_or_create(user=request.user)
+
+        if new_email:
+            # Update both User model and MFA record
+            request.user.email = new_email
+            request.user.save()
+
+            mfa.email = new_email
+            mfa.save()
+
+            messages.success(request, "Your email has been updated for both account and MFA.")
+        else:
+            messages.error(request, "Please enter a valid email address.")
+
+    return redirect('mfa_status')
+
+
+
+EMAIL_CODE_EXPIRY_MINUTES = 50 # You can configure this
+
+
+def mfa_verify(request):
+    user_id = request.session.get('pre_mfa_user_id')
+    if not user_id:
+        return redirect('login')
+
+    user = get_object_or_404(User, id=user_id)
+    mfa = user.usermfa
+
+    # Generate and send code if missing or expired
+    now = timezone.now()
+    expired = not mfa.email_code_created or (now - mfa.email_code_created) > timedelta(minutes=EMAIL_CODE_EXPIRY_MINUTES)
+
+    if mfa.method == 'email' and (not mfa.email_code or expired):
+        mfa.email_code = str(random.randint(100000, 999999))
+        mfa.email_code_created = now
+        mfa.save()
+        send_mail(
+            subject='Your MFA Verification Code',
+            message=f'Your login verification code is: {mfa.email_code}',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=False,
+        )
+
+    if request.method == 'POST':
+        token = request.POST.get('token')
+
+        if mfa.method == 'qrcode':
+            otp = pyotp.TOTP(mfa.secret)
+            if otp.verify(token):
+                login(request, user)
+                request.session.pop('pre_mfa_user_id', None)
+                return redirect('dashboard')
+            else:
+                messages.error(request, "Invalid authenticator code.")
+
+        elif mfa.method == 'email':
+            if expired:
+                messages.error(request, "The code has expired. A new code was sent.")
+            elif token == mfa.email_code:
+                login(request, user)
+                mfa.email_code = None
+                mfa.email_code_created = None
+                mfa.save()
+                request.session.pop('pre_mfa_user_id', None)
+                if user.role == 'admin':
+                    return redirect('dashboard')  # admin dashboard
+                elif user.role == 'officer':
+                        return redirect('dashboard')  # officer dashboard
+                else:
+                        return redirect('dashboard')  # citizen dashboard
+                
+            else:
+                messages.error(request, "Invalid email verification code.")
+
+    return render(request, 'mfa/mfa_verify.html', {
+        'method': mfa.method,
+         'email': user.email,
+        'resend_url': reverse('mfa_resend'),
+        
+    })
+
+def mfa_resend(request):   
+    user_id = request.session.get('pre_mfa_user_id')
+    mfa, _ = UserMFA.objects.get_or_create(user=user_id)
+    email = mfa.email or request.user.email
+
+    # Generate and send code if missing or expired
+    if not user_id:
+        messages.error(request, "Session expired or invalid. Please login again.")
+        return redirect('login')
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect('login')
+
+    # Generate a new 6-digit code
+    mfa.email_code = f"{random.randint(100000, 999999)}"
+    mfa.save()
+
+    # Send the email
+    send_mail(
+        'Your MFA Email Verification Code',
+        f'Your verification code is: {mfa.email_code}',
+        settings.DEFAULT_FROM_EMAIL,
+        [email],
+    )
+
+    messages.success(request, "Verification code resent to your email.")
+    return redirect('mfa_verify')
+
+
+@login_required
+def mfa_status(request):
+    mfa, _ = UserMFA.objects.get_or_create(user=request.user)
+    
+    context = {
+        'email': mfa.email or request.user.email,
+        'is_enabled': mfa.is_enabled,
+        'method': mfa.get_method_display() if mfa.method else None,
+        'enabled_at': localtime(mfa.updated_at) if mfa.is_enabled else None
+    }
+    return render(request, 'mfa/status.html', context)
